@@ -4,9 +4,13 @@ ARG workdir=/app
 
 RUN mkdir $workdir
 WORKDIR $workdir
-ADD Pipfile $workdir
-ADD Pipfile.lock $workdir
+COPY Pipfile $workdir
+COPY Pipfile.lock $workdir
+COPY main.py $workdir
 
 RUN pip install --upgrade pip && \
     pip install pipenv && \
     pipenv sync
+
+CMD ["pipenv", "run", "python", "main.py"]
+
