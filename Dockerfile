@@ -6,7 +6,6 @@ RUN mkdir $workdir
 WORKDIR $workdir
 COPY Pipfile $workdir
 COPY Pipfile.lock $workdir
-COPY main.py $workdir
 
 RUN pip install --upgrade pip && \
     pip install pipenv && \
