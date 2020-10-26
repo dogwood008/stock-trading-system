@@ -9,7 +9,8 @@ COPY Pipfile.lock $workdir
 
 RUN pip install --upgrade pip && \
     pip install pipenv && \
-    pipenv sync
+    pipenv sync && \
+    git clone https://github.com/mementum/backtrader.git /opt/backtrader
 
 CMD ["pipenv", "run", "python", "main.py"]
 
