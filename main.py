@@ -8,22 +8,31 @@ import sys  # To find out the script name (in argv[0])
 # Import the backtrader platform
 import backtrader as bt
 
+# ログ用
+from logging import getLogger, StreamHandler, Formatter, DEBUG, WARN
 
 # Create a Stratey
-class TestStrategy(bt.Strategy):
-
-    def log(self, txt, dt=None):
-        ''' Logging function for this strategy'''
+class TestStrategyWithLogger(bt.Strategy):
+    def _log(self, txt, dt=None):
+        ''' Logging function for this strategy '''
         dt = dt or self.datas[0].datetime.date(0)
-        print('%s, %s' % (dt.isoformat(), txt))
+        self._logger.debug('%s, %s' % (dt.isoformat(), txt))
 
-    def __init__(self):
+    def __init__(self, loglevel=DEBUG):
         # Keep a reference to the "close" line in the data[0] dataseries
-        self.dataclose = self.datas[0].close
+        self._dataclose = self.datas[0].close
+        self._logger = getLogger(__name__)
+        self.handler = StreamHandler()
+        self.handler.setLevel(loglevel)
+        self._logger.setLevel(DEBUG)
+        self._logger.addHandler(self.handler)
+        self._logger.propagate = False
+        self.handler.setFormatter(
+                Formatter('[%(levelname)s] %(message)s'))
 
     def next(self):
         # Simply log the closing price of the series from the reference
-        self.log('Close, %.2f' % self.dataclose[0])
+        self._log('Close, %.2f' % self._dataclose[0])
 
 
 if __name__ == '__main__':
@@ -31,7 +40,9 @@ if __name__ == '__main__':
     cerebro = bt.Cerebro()
 
     # Add a strategy
-    cerebro.addstrategy(TestStrategy)
+    IN_DEVELOPMENT = True
+    loglevel = DEBUG if IN_DEVELOPMENT else WARN
+    cerebro.addstrategy(TestStrategyWithLogger, loglevel)
 
     # Datas are in a subfolder of the samples. Need to find where the script is
     # because it could have been called from anywhere
