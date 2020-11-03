@@ -8,9 +8,57 @@ import sys  # To find out the script name (in argv[0])
 # Import the backtrader platform
 import backtrader as bt
 
+# ログ用
+from logging import getLogger, StreamHandler, Formatter, DEBUG, INFO, WARN
+
+# Create a Stratey
+class TestStrategyWithLogger(bt.Strategy):
+    def _log(self, txt, loglevel=INFO, dt=None):
+        ''' Logging function for this strategy '''
+        dt = dt or self.datas[0].datetime.date(0)
+        self._logger.log(loglevel, '%s, %s' % (dt.isoformat(), txt))
+
+    def _debug(self, txt, dt=None):
+        self._logger._log(DEBUG, '%s, %s' % (dt.isoformat(), txt))
+
+    def _info(self, txt, dt=None):
+        self._logger._log(INFO, '%s, %s' % (dt.isoformat(), txt))
+
+    def __init__(self, loglevel=DEBUG):
+        # Keep a reference to the "close" line in the data[0] dataseries
+        self._dataclose = self.datas[0].close
+        self._logger = getLogger(__name__)
+        self.handler = StreamHandler()
+        self.handler.setLevel(loglevel)
+        self._logger.setLevel(DEBUG)
+        self._logger.addHandler(self.handler)
+        self._logger.propagate = False
+        self.handler.setFormatter(
+                Formatter('[%(levelname)s] %(message)s'))
+
+    def next(self):
+        # Simply log the closing price of the series from the reference
+        self._debug('Close, %.2f' % self._dataclose[0])
+
+        if self._dataclose[0] < self._dataclose[-1]:
+            # current close less than previous close
+
+            if self._dataclose[-1] < self._dataclose[-2]:
+                # previous close less than the previous close
+
+                # BUY, BUY, BUY!!! (with all possible default parameters)
+                self._info('BUY CREATE, %.2f' % self._dataclose[0])
+                self.buy()
+
+
 if __name__ == '__main__':
     # Create a cerebro entity
     cerebro = bt.Cerebro()
+
+    # Add a strategy
+    IN_DEVELOPMENT = True
+    loglevel = DEBUG if IN_DEVELOPMENT else WARN
+    cerebro.addstrategy(TestStrategyWithLogger, loglevel)
 
     # Datas are in a subfolder of the samples. Need to find where the script is
     # because it could have been called from anywhere
