@@ -19,10 +19,10 @@ class TestStrategyWithLogger(bt.Strategy):
         self._logger.log(loglevel, '%s, %s' % (dt.isoformat(), txt))
 
     def _debug(self, txt, dt=None):
-        self._logger._log(DEBUG, '%s, %s' % (dt.isoformat(), txt))
+        self._log(txt, DEBUG, dt)
 
     def _info(self, txt, dt=None):
-        self._logger._log(INFO, '%s, %s' % (dt.isoformat(), txt))
+        self._log(txt, INFO, dt)
 
     def __init__(self, loglevel=DEBUG):
         # Keep a reference to the "close" line in the data[0] dataseries
