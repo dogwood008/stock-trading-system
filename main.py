@@ -9,14 +9,20 @@ import sys  # To find out the script name (in argv[0])
 import backtrader as bt
 
 # ログ用
-from logging import getLogger, StreamHandler, Formatter, DEBUG, WARN
+from logging import getLogger, StreamHandler, Formatter, DEBUG, INFO, WARN
 
 # Create a Stratey
 class TestStrategyWithLogger(bt.Strategy):
-    def _log(self, txt, dt=None):
+    def _log(self, txt, loglevel=INFO, dt=None):
         ''' Logging function for this strategy '''
         dt = dt or self.datas[0].datetime.date(0)
-        self._logger.debug('%s, %s' % (dt.isoformat(), txt))
+        self._logger.log(loglevel, '%s, %s' % (dt.isoformat(), txt))
+
+    def _debug(self, txt, dt=None):
+        self._logger._log(DEBUG, '%s, %s' % (dt.isoformat(), txt))
+
+    def _info(self, txt, dt=None):
+        self._logger._log(INFO, '%s, %s' % (dt.isoformat(), txt))
 
     def __init__(self, loglevel=DEBUG):
         # Keep a reference to the "close" line in the data[0] dataseries
@@ -32,7 +38,17 @@ class TestStrategyWithLogger(bt.Strategy):
 
     def next(self):
         # Simply log the closing price of the series from the reference
-        self._log('Close, %.2f' % self._dataclose[0])
+        self._debug('Close, %.2f' % self._dataclose[0])
+
+        if self._dataclose[0] < self._dataclose[-1]:
+            # current close less than previous close
+
+            if self._dataclose[-1] < self._dataclose[-2]:
+                # previous close less than the previous close
+
+                # BUY, BUY, BUY!!! (with all possible default parameters)
+                self._info('BUY CREATE, %.2f' % self._dataclose[0])
+                self.buy()
 
 
 if __name__ == '__main__':
