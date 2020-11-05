@@ -8,6 +8,7 @@ verify_ssl = true
 [packages]
 backtrader = "*"
 matplotlib = "==3.2.2"
+backtrader-plotting = "*"
 
 [requires]
 python_version = "3.8"
