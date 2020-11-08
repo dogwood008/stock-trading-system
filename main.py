@@ -9,6 +9,9 @@ import sys  # To find out the script name (in argv[0])
 import backtrader as bt
 from backtrader import Order
 
+from backtrader_plotting import Bokeh
+from backtrader_plotting.schemes import Tradimo
+
 # ログ用
 from logging import getLogger, StreamHandler, Formatter, DEBUG, INFO, WARN
 
@@ -102,3 +105,6 @@ if __name__ == '__main__':
 
     # Print out the final result
     print('Final Portfolio Value: %.2f' % cerebro.broker.getvalue())
+
+    b = Bokeh(style='bar', plot_mode='single', scheme=Tradimo(), output_mode='save', filename='chart.html')
+    cerebro.plot(b)
