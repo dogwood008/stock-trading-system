@@ -7,12 +7,16 @@ import sys  # To find out the script name (in argv[0])
 
 # Import the backtrader platform
 import backtrader as bt
+from backtrader import Order
 
 # ログ用
 from logging import getLogger, StreamHandler, Formatter, DEBUG, INFO, WARN
 
 # Create a Stratey
 class TestStrategyWithLogger(bt.Strategy):
+    params = (
+        ('size', 1000),
+    )
     def _log(self, txt, loglevel=INFO, dt=None):
         ''' Logging function for this strategy '''
         dt = dt or self.datas[0].datetime.date(0)
@@ -36,9 +40,16 @@ class TestStrategyWithLogger(bt.Strategy):
         self.handler.setFormatter(
                 Formatter('[%(levelname)s] %(message)s'))
 
+
+    def notify_order(self, order: Order) -> None:
+        ''' backtraderから呼ばれる '''
+        if order.status == Order.Completed:
+            if order.isbuy():
+                self._info('BUY: %.2f' % order.executed.price)
+
     def next(self):
         # Simply log the closing price of the series from the reference
-        self._debug('Close, %.2f' % self._dataclose[0])
+        self._debug('[Close, position] = %.2f, %s' % (self._dataclose[0], self.getposition()))
 
         if self._dataclose[0] < self._dataclose[-1]:
             # current close less than previous close
@@ -48,8 +59,11 @@ class TestStrategyWithLogger(bt.Strategy):
 
                 # BUY, BUY, BUY!!! (with all possible default parameters)
                 self._info('BUY CREATE, %.2f' % self._dataclose[0])
-                self.buy()
+                self.buy(size=self.params.size)
 
+            if self._dataclose[-2] * .97 > self._dataclose[-1]:
+                # 前日が前々日の3%を超える下落時に手仕舞い
+                self.close()
 
 if __name__ == '__main__':
     # Create a cerebro entity
