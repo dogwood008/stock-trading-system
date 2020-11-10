@@ -7,6 +7,8 @@ WORKDIR $workdir
 COPY Pipfile $workdir
 COPY Pipfile.lock $workdir
 
+ENV TZ=Asia/Tokyo
+
 RUN pip install --upgrade pip && \
     pip install pipenv && \
     pipenv sync && \
