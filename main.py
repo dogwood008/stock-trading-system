@@ -55,7 +55,7 @@ class TestStrategyWithLogger(bt.Strategy):
 
     def next(self):
         # Simply log the closing price of the series from the reference
-        self._debug('[Close, position] = %.2f, %s' % (self._dataclose[0], self.getposition()))
+        self._debug('[Close] = %.2f' % (self._dataclose[0]))
 
         if self._dataclose[0] < self._dataclose[-1]:
             # current close less than previous close
