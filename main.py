@@ -19,6 +19,7 @@ from logging import getLogger, StreamHandler, Formatter, DEBUG, INFO, WARN
 class TestStrategyWithLogger(bt.Strategy):
     params = (
         ('size', 1000),
+        ('smaperiod', 5),
     )
     def _log(self, txt, loglevel=INFO, dt=None):
         ''' Logging function for this strategy '''
@@ -42,6 +43,8 @@ class TestStrategyWithLogger(bt.Strategy):
         self._logger.propagate = False
         self.handler.setFormatter(
                 Formatter('[%(levelname)s] %(message)s'))
+        self.sma = bt.indicators.SimpleMovingAverage(
+            self.datas[0], period=self.params.smaperiod)
 
 
     def notify_order(self, order: Order) -> None:
@@ -52,7 +55,7 @@ class TestStrategyWithLogger(bt.Strategy):
 
     def next(self):
         # Simply log the closing price of the series from the reference
-        self._debug('[Close, position] = %.2f, %s' % (self._dataclose[0], self.getposition()))
+        self._debug('[Close] = %.2f' % (self._dataclose[0]))
 
         if self._dataclose[0] < self._dataclose[-1]:
             # current close less than previous close
