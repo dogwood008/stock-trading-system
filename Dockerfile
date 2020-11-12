@@ -1,18 +1,31 @@
-FROM python:3.8.6
+FROM jupyter/scipy-notebook:42f4c82a07ff
 LABEL maintainer="dogwood008"
-ARG workdir=/app
+ARG workdir=/home/jovyan/work
+ARG btrepodir=/opt/backtrader
+ARG tmpdir=/tmp
 
-RUN mkdir $workdir
-WORKDIR $workdir
-COPY Pipfile $workdir
-COPY Pipfile.lock $workdir
+EXPOSE 8888
 
 ENV TZ=Asia/Tokyo
 
+USER root
+RUN git clone https://github.com/mementum/backtrader.git $btrepodir && \
+     chown -R jovyan $btrepodir
+
+USER jovyan
+
+WORKDIR $tmpdir
+COPY Pipfile $tmpdir
+COPY Pipfile.lock $tmpdir
+
 RUN pip install --upgrade pip && \
     pip install pipenv && \
-    pipenv sync && \
-    git clone https://github.com/mementum/backtrader.git /opt/backtrader
+    pipenv install --system --ignore-pipfile --python=$(conda run which python) --site-packages
+WORKDIR $workdir
 
-CMD ["pipenv", "run", "python", "main.py"]
+# Run Jupyter
+CMD ["start-notebook.sh"]
+
+# When Run backtest
+# CMD ["pipenv", "run", "python", "main.py"]
 
