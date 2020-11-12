@@ -3,4 +3,6 @@ services:
   app:
     build: .
     volumes:
-      - .:/app
+      - .:/home/jovyan/work
+    ports:
+      - '8888:8888'
