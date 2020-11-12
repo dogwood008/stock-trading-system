@@ -1,7 +1,7 @@
 {
     "_meta": {
         "hash": {
-            "sha256": "1831bb60accf44a2cb338c3d8122dafb0e3dd02666197bbc20c91ec1785fb5cb"
+            "sha256": "e5ee0905cde7736e260ef8240e7468ee9048df23f4d8dc8b492ba960e05b6cfc"
         },
         "pipfile-spec": 6,
         "requires": {
@@ -17,11 +17,12 @@
     },
     "default": {
         "backtrader": {
+            "editable": true,
+            "git": "https://github.com/Larry-u/backtrader.git",
             "hashes": [
                 "sha256:0dc8912a98352b75122f8d7084bc63ee47f61c2a1d16f506d4d82aee3941297a"
             ],
-            "index": "pypi",
-            "version": "==1.9.76.123"
+            "ref": "61f0878a4e3616b62d3ad035acafd0ff25da1dec"
         },
         "backtrader-plotting": {
             "hashes": [
