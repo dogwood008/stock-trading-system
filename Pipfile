@@ -4,9 +4,10 @@ verify_ssl = true
 name = "pypi"
 
 [packages]
-backtrader = {editable = true, ref = "master", git = "https://github.com/mementum//backtrader.git"}
+backtrader = {editable = true, ref = "master", git = "https://github.com/mementum/backtrader.git"}
 matplotlib = "*"
 backtrader-plotting = "*"
+python-kabusapi = {ref = "feature/add_setup.py", git = "https://github.com/dogwood008/python-kabusapi.git"}
 
 [dev-packages]
 jupyter = "*"
