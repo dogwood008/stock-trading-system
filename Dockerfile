@@ -20,7 +20,7 @@ COPY Pipfile.lock $tmpdir
 
 RUN pip install --upgrade pip && \
     pip install pipenv && \
-    pipenv install --system --ignore-pipfile --python=$(conda run which python) --site-packages
+    pipenv install --deploy --ignore-pipfile --python=$(conda run which python) --site-packages
 WORKDIR $workdir
 
 # Run Jupyter
