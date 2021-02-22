@@ -4,7 +4,7 @@ verify_ssl = true
 name = "pypi"
 
 [packages]
-backtrader = {editable = true, ref = "patch-1", git = "https://github.com/Larry-u/backtrader.git"}
+backtrader = {editable = true, ref = "master", git = "https://github.com/mementum//backtrader.git"}
 matplotlib = "*"
 backtrader-plotting = "*"
 

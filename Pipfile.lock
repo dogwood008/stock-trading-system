@@ -18,10 +18,7 @@
     "default": {
         "backtrader": {
             "editable": true,
-            "git": "https://github.com/Larry-u/backtrader.git",
-            "hashes": [
-                "sha256:0dc8912a98352b75122f8d7084bc63ee47f61c2a1d16f506d4d82aee3941297a"
-            ],
+            "git": "https://github.com/mementum/backtrader.git",
             "ref": "61f0878a4e3616b62d3ad035acafd0ff25da1dec"
         },
         "backtrader-plotting": {
