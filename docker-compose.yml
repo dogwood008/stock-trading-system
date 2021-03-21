@@ -3,6 +3,6 @@ services:
   app:
     build: .
     volumes:
-      - .:/home/jovyan/work
+      - .:/home/jovyan/work:delegated
     ports:
       - '8888:8888'
