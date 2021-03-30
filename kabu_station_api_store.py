@@ -38,13 +38,6 @@ if is_in_jupyter():
 
 # ## Main
 
-# In[21]:
-
-
-get_ipython().system('pip uninstall -y kabusapi')
-get_ipython().system("pip install 'git+https://github.com/dogwood008/python-kabusapi@feature/add_setup.py#egg=kabusapi'")
-
-
 # In[3]:
 
 
@@ -94,7 +87,7 @@ kabusapi.Context
 
 # ## for reference
 
-# In[ ]:
+# In[4]:
 
 
 # Extend the exceptions to support extra cases
@@ -159,7 +152,7 @@ kabusapi.Context
 
 # ## for reference
 
-# In[ ]:
+# In[5]:
 
 
 #FIXME
@@ -229,11 +222,11 @@ kabusapi.Context
 
 # ## Main
 
-# In[2]:
+# In[6]:
 
 
 from enum import Enum
-class KabusAPIEnv(Enum):
+class KabuSAPIEnv(Enum):
     DEV = 'dev'
     PROD = 'prod'
 
@@ -253,6 +246,9 @@ class MetaSingleton(MetaParams):
                 super(MetaSingleton, cls).__call__(*args, **kwargs))
 
         return cls._singleton
+
+
+# In[7]:
 
 
 class KabuSAPIStore(with_metaclass(MetaSingleton, object)):
@@ -300,9 +296,9 @@ class KabuSAPIStore(with_metaclass(MetaSingleton, object)):
                 return port
             return 18081 if self.p.env == KabuSAPIEnv.DEV else 18080
 
-        def _init_kabusapi_client(self) -> kabusapiapi.Context:
+        def _init_kabusapi_client() -> kabusapi.Context:
             url = self.p.url
-            port = self.p.get('port', _getport())
+            port = self.p.port or _getport()
             password = self.p.password
             token = kabusapi.Context(url, port, password).token
             self.kapi = kabusapi.Context(url, port, token=token)
@@ -421,8 +417,8 @@ class KabuSAPIStore(with_metaclass(MetaSingleton, object)):
         # t.start()
         return q
 
-    @self.kapi.websocket
-    def _streaming_listener(msg)
+    # FIXME: @self.kapi.websocket
+    def _streaming_listener(msg):
         '''
         Ref: https://github.com/shirasublue/python-kabusapi/blob/master/sample/push_sample.py
         '''
@@ -474,6 +470,7 @@ class KabuSAPIStore(with_metaclass(MetaSingleton, object)):
             dtkwargs['end'] = int((dtend - self._DTEPOCH).total_seconds())  # FIXME: _DTEPOCH
 
         try:
+            pass
             # FIXME: granularity
             # response = self.oapi.get_history(instrument=dataname,
             #                                  granularity=granularity,
@@ -767,9 +764,34 @@ class KabuSAPIStore(with_metaclass(MetaSingleton, object)):
                 self.broker._reject(oref)
 
 
+# In[10]:
+
+
+class OandaBroker(): # FIXME
+    pass
+
+
+# In[13]:
+
+
+from backtrader.feed import DataBase
+class MetaOandaData(DataBase.__class__):
+    def __init__(cls, name, bases, dct):
+        '''Class has already been created ... register'''
+        # Initialize the class
+        super(MetaOandaData, cls).__init__(name, bases, dct)
+
+        # Register with the store
+        KabuSAPIStore.DataCls = cls
+
+
+class OandaData(with_metaclass(MetaOandaData, DataBase)): # FIXME
+    pass
+
+
 # ## Test
 
-# In[ ]:
+# In[8]:
 
 
 # https://community.backtrader.com/topic/1570/oanda-data-feed
@@ -790,19 +812,27 @@ class TestStrategy(bt.Strategy):
         self.log('Close, %.2f' % self.dataclose[0])
 
 
+# In[16]:
+
+
+import os
+from datetime import datetime
 if __name__ == '__main__':
 
     # Create a cerebro entity
     cerebro = bt.Cerebro()
 
+    password = os.environ.get('PASSWORD')
     # Create oandastore
-    oandastore = KabuSAPIStore(token = token, account = account)
+    kabusapistore = KabuSAPIStore(password = password)
+    kabusapistore.BrokerCls = OandaBroker()
+    kabusapistore.DataCls = OandaBroker()
     # instantiate data    
     data = oandastore.getdata(dataname='EUR_USD', 
                        compression=1,
                        backfill=False,
-                       fromdate=datetime.datetime(2018, 1, 1),
-                       todate=datetime.datetime(2019, 1, 1),
+                       fromdate=datetime(2018, 1, 1),
+                       todate=datetime(2019, 1, 1),
                        qcheck=0.5,
                        timeframe=bt.TimeFrame.Minutes,
                        backfill_start=False,
@@ -826,4 +856,10 @@ if __name__ == '__main__':
 
     # Print out the final result
     print('Final Portfolio Value: %.2f' % cerebro.broker.getvalue())
+
+
+# In[ ]:
+
+
+
 
