@@ -36,9 +36,59 @@ if is_in_jupyter():
     set_stylesheet()
 
 
+# ## Logger
+
+# In[41]:
+
+
+# ログ用
+from logging import Logger, getLogger, StreamHandler, Formatter, DEBUG, INFO, WARN
+from pprint import PrettyPrinter
+class KabuSLogger:
+    # VERBOSE = DEBUG / 2
+    def __init__(self, loglevel: int=INFO):
+        self._logger = getLogger(__name__)
+        self._handler = StreamHandler()
+        self._handler.setLevel(loglevel)
+        self._logger.setLevel(DEBUG)
+        self._logger.addHandler(self.handler)
+        self._logger.propagate = False
+        self._handler.setFormatter(
+                Formatter('[%(levelname)s] %(message)s'))
+    @property
+    def logger(self) -> Logger:
+        return self._logger
+    
+    @property
+    def handler(self) -> StreamHandler:
+        return self._handler
+    
+    # def verbose(self, msg, *args, **kwargs):
+    #     self.log(self.VERBOSE, msg, args, kwargs)
+        
+    def debug(self, msg, **kwargs):
+        self.log(DEBUG, msg, **kwargs)
+        
+    def info(self, msg, **kwargs):
+        self.log(INFO, msg, **kwargs)
+        
+    def warn(self, msg, **kwargs):
+        self.log(WARN, msg, **kwargs)
+        
+    def log(self, level, msg, **kwargs):
+        if kwargs:
+            self._logger.log(level, msg, **kwargs)
+        else:
+            self._logger.log(level, msg)
+    
+logger = KabuSLogger(DEBUG)
+logger.debug('test')
+logger.info('test')
+
+
 # ## Main
 
-# In[3]:
+# In[ ]:
 
 
 #!/usr/bin/env python
@@ -87,7 +137,7 @@ kabusapi.Context
 
 # ## for reference
 
-# In[4]:
+# In[ ]:
 
 
 # Extend the exceptions to support extra cases
@@ -152,7 +202,7 @@ kabusapi.Context
 
 # ## for reference
 
-# In[5]:
+# In[ ]:
 
 
 #FIXME
@@ -222,7 +272,9 @@ kabusapi.Context
 
 # ## Main
 
-# In[6]:
+# ## KabuSAPIEnv
+
+# In[ ]:
 
 
 from enum import Enum
@@ -231,7 +283,9 @@ class KabuSAPIEnv(Enum):
     PROD = 'prod'
 
 
-# In[7]:
+# ## MetaSingleton
+
+# In[ ]:
 
 
 class MetaSingleton(MetaParams):
@@ -248,7 +302,9 @@ class MetaSingleton(MetaParams):
         return cls._singleton
 
 
-# In[10]:
+# ## KabuSAPIStore
+
+# In[ ]:
 
 
 class KabuSAPIStore(with_metaclass(MetaSingleton, object)):
@@ -764,7 +820,9 @@ class KabuSAPIStore(with_metaclass(MetaSingleton, object)):
                 self.broker._reject(oref)
 
 
-# In[15]:
+# ## KabuSAPICommInfo
+
+# In[ ]:
 
 
 # WIP
@@ -817,6 +875,8 @@ class OandaCommInfo(CommInfoBase):
         '''Returns the needed amount of cash an operation would cost'''
         # Same reasoning as above
         return abs(size) * price
+KabuSCommInfo = OandaCommInfo
+    
 
 
 class MetaOandaBroker(BrokerBase.__class__):
@@ -825,6 +885,12 @@ class MetaOandaBroker(BrokerBase.__class__):
         # Initialize the class
         super(MetaOandaBroker, cls).__init__(name, bases, dct)
         KabuSAPIStore.BrokerCls = cls
+MetaKabuSBroker = MetaOandaBroker
+
+
+# ## OandaBroker
+
+# In[ ]:
 
 
 class OandaBroker(with_metaclass(MetaOandaBroker, BrokerBase)):
@@ -1127,8 +1193,18 @@ class OandaBroker(with_metaclass(MetaOandaBroker, BrokerBase)):
         self.notifs.append(None)  # mark notification boundary
 
 
-# In[16]:
+# ## KabuSBroker
 
+# In[ ]:
+
+
+KabuSBroker = OandaBroker
+
+
+# In[ ]:
+
+
+import pprint
 
 from backtrader.feed import DataBase
 class MetaOandaData(DataBase.__class__):
@@ -1142,12 +1218,16 @@ class MetaOandaData(DataBase.__class__):
 
 
 class OandaData(with_metaclass(MetaOandaData, DataBase)): # FIXME
-    pass
+    def __init__(self, *args, **kwargs):
+        pp = pprint.PrettyPrinter()
+        pp.pprint(args)
+        pp.pprint(kwargs)
+        pp.pprint(f'{self} called.')
 
 
 # ## Test
 
-# In[17]:
+# In[ ]:
 
 
 # https://community.backtrader.com/topic/1570/oanda-data-feed
@@ -1168,7 +1248,7 @@ class TestStrategy(bt.Strategy):
         self.log('Close, %.2f' % self.dataclose[0])
 
 
-# In[19]:
+# In[ ]:
 
 
 import os
@@ -1181,7 +1261,7 @@ if __name__ == '__main__':
     password = os.environ.get('PASSWORD')
     # Create oandastore
     kabusapistore = KabuSAPIStore(password = password)
-    kabusapistore.BrokerCls = OandaBroker()
+    kabusapistore.BrokerCls = KabuSBroker()
     kabusapistore.DataCls = OandaBroker()
     # instantiate data    
     data = kabusapistore.getdata(dataname='EUR_USD', 
