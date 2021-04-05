@@ -38,30 +38,41 @@ if is_in_jupyter():
 
 # ## Logger
 
-# In[41]:
+# In[18]:
 
 
 # ログ用
-from logging import Logger, getLogger, StreamHandler, Formatter, DEBUG, INFO, WARN
+from logging import Logger, Handler, getLogger, StreamHandler, Formatter, DEBUG, INFO, WARN
 from pprint import PrettyPrinter
 class KabuSLogger:
     # VERBOSE = DEBUG / 2
-    def __init__(self, loglevel: int=INFO):
-        self._logger = getLogger(__name__)
-        self._handler = StreamHandler()
-        self._handler.setLevel(loglevel)
-        self._logger.setLevel(DEBUG)
-        self._logger.addHandler(self.handler)
-        self._logger.propagate = False
-        self._handler.setFormatter(
-                Formatter('[%(levelname)s] %(message)s'))
-    @property
-    def logger(self) -> Logger:
-        return self._logger
+    def __init__(self, loggername: str=__name__, loglevel_handler: int=INFO,
+                loglevel_logger: int=DEBUG):
+        self._logger_name = loggername
+        self._loglevel_handler = loglevel_handler
+        self._loglevel_logger = loglevel_logger
+        self._logger = self.logger
+        self._handler = self.handler
+        self._logger.addHandler(self._handler)
     
     @property
-    def handler(self) -> StreamHandler:
-        return self._handler
+    def handler(self) -> Handler:
+        if '_handler' in globals():
+            return self._handler
+        handler = StreamHandler()
+        handler.setLevel(self._loglevel_handler)
+        handler.setFormatter(
+          Formatter('[%(levelname)s] %(message)s'))
+        return handler
+        
+    @property
+    def logger(self) -> Logger:
+        if '_logger' in globals():
+            return self._logger
+        logger = getLogger(self._logger_name)
+        logger.setLevel(self._loglevel_logger)
+        logger.propagate = False
+        return logger
     
     # def verbose(self, msg, *args, **kwargs):
     #     self.log(self.VERBOSE, msg, args, kwargs)
@@ -80,8 +91,12 @@ class KabuSLogger:
             self._logger.log(level, msg, **kwargs)
         else:
             self._logger.log(level, msg)
-    
-logger = KabuSLogger(DEBUG)
+logger = KabuSLogger(__name__, DEBUG, DEBUG)
+
+
+# In[21]:
+
+
 logger.debug('test')
 logger.info('test')
 
@@ -1292,6 +1307,12 @@ if __name__ == '__main__':
 
     # Print out the final result
     print('Final Portfolio Value: %.2f' % cerebro.broker.getvalue())
+
+
+# In[ ]:
+
+
+
 
 
 # In[ ]:
