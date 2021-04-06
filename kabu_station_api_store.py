@@ -38,7 +38,21 @@ if is_in_jupyter():
 
 # ## Logger
 
-# In[18]:
+# In[4]:
+
+
+from logging import Handler, StreamHandler, Formatter, DEBUG, INFO, WARN
+class KabuSHandler(StreamHandler):
+    def __init__(self, loglevel: int=INFO):
+        super().__init__()
+        self.setLevel(loglevel)
+        self.setFormatter(
+          Formatter('[%(levelname)s] %(message)s'))
+    
+handler = KabuSHandler(DEBUG)
+
+
+# In[25]:
 
 
 # ログ用
@@ -46,25 +60,12 @@ from logging import Logger, Handler, getLogger, StreamHandler, Formatter, DEBUG,
 from pprint import PrettyPrinter
 class KabuSLogger:
     # VERBOSE = DEBUG / 2
-    def __init__(self, loggername: str=__name__, loglevel_handler: int=INFO,
+    def __init__(self, loggername: str=__name__,
                 loglevel_logger: int=DEBUG):
         self._logger_name = loggername
-        self._loglevel_handler = loglevel_handler
         self._loglevel_logger = loglevel_logger
         self._logger = self.logger
-        self._handler = self.handler
-        self._logger.addHandler(self._handler)
     
-    @property
-    def handler(self) -> Handler:
-        if '_handler' in globals():
-            return self._handler
-        handler = StreamHandler()
-        handler.setLevel(self._loglevel_handler)
-        handler.setFormatter(
-          Formatter('[%(levelname)s] %(message)s'))
-        return handler
-        
     @property
     def logger(self) -> Logger:
         if '_logger' in globals():
@@ -74,6 +75,9 @@ class KabuSLogger:
         logger.propagate = False
         return logger
     
+    def addHandler(self, handler: Handler):
+        self.logger.addHandler(handler)
+        
     # def verbose(self, msg, *args, **kwargs):
     #     self.log(self.VERBOSE, msg, args, kwargs)
         
@@ -91,10 +95,13 @@ class KabuSLogger:
             self._logger.log(level, msg, **kwargs)
         else:
             self._logger.log(level, msg)
-logger = KabuSLogger(__name__, DEBUG, DEBUG)
+
+if not 'logger' in globals():
+    logger = KabuSLogger(__name__, DEBUG)
+    logger.addHandler(handler)
 
 
-# In[21]:
+# In[6]:
 
 
 logger.debug('test')
@@ -103,7 +110,7 @@ logger.info('test')
 
 # ## Main
 
-# In[ ]:
+# In[7]:
 
 
 #!/usr/bin/env python
@@ -152,7 +159,7 @@ kabusapi.Context
 
 # ## for reference
 
-# In[ ]:
+# In[8]:
 
 
 # Extend the exceptions to support extra cases
@@ -217,7 +224,7 @@ kabusapi.Context
 
 # ## for reference
 
-# In[ ]:
+# In[9]:
 
 
 #FIXME
@@ -289,7 +296,7 @@ kabusapi.Context
 
 # ## KabuSAPIEnv
 
-# In[ ]:
+# In[10]:
 
 
 from enum import Enum
@@ -300,7 +307,7 @@ class KabuSAPIEnv(Enum):
 
 # ## MetaSingleton
 
-# In[ ]:
+# In[11]:
 
 
 class MetaSingleton(MetaParams):
@@ -319,7 +326,7 @@ class MetaSingleton(MetaParams):
 
 # ## KabuSAPIStore
 
-# In[ ]:
+# In[22]:
 
 
 class KabuSAPIStore(with_metaclass(MetaSingleton, object)):
@@ -345,6 +352,8 @@ class KabuSAPIStore(with_metaclass(MetaSingleton, object)):
         ('env', KabuSAPIEnv.DEV),
         ('port', None),
         ('password', None),
+        ('logger', None),
+        ('handler', None)
     )
 
     # _DTEPOCH = datetime(1970, 1, 1)
@@ -361,7 +370,7 @@ class KabuSAPIStore(with_metaclass(MetaSingleton, object)):
         '''Returns broker with *args, **kwargs from registered ``BrokerCls``'''
         return cls.BrokerCls(*args, **kwargs)
 
-    def __init__(self):
+    def __init__(self, *args, **kwargs):
         def _getport() -> int:
             if self.p.port:
                 return port
@@ -373,8 +382,18 @@ class KabuSAPIStore(with_metaclass(MetaSingleton, object)):
             password = self.p.password
             token = kabusapi.Context(url, port, password).token
             self.kapi = kabusapi.Context(url, port, token=token)
+            self._logger.debug('_init_kabusapi_client() called')
             
         super(KabuSAPIStore, self).__init__()
+
+        if self.p.logger:
+            self._logger = self.p.logger
+        else:
+            loglevel = DEBUG if self.p.env == KabuSAPIEnv.DEV else INFO
+            self._logger: KabuSLogger = KabuSLogger(__name__,
+                                       loglevel_logger=loglevel)
+            if self.p.handler:
+                self._logger.addHandler(self.p.handler)
 
         self.notifs = collections.deque()  # store notifications for cerebro
 
@@ -391,7 +410,6 @@ class KabuSAPIStore(with_metaclass(MetaSingleton, object)):
         self._cash = 0.0
         self._value = 0.0
         self._evt_acct = threading.Event()
-        
 
     def start(self, data=None, broker=None):
         # Datas require some processing to kickstart data reception
@@ -837,7 +855,7 @@ class KabuSAPIStore(with_metaclass(MetaSingleton, object)):
 
 # ## KabuSAPICommInfo
 
-# In[ ]:
+# In[13]:
 
 
 # WIP
@@ -894,21 +912,21 @@ KabuSCommInfo = OandaCommInfo
     
 
 
-class MetaOandaBroker(BrokerBase.__class__):
+class MetaKabuSBroker(BrokerBase.__class__):
     def __init__(cls, name, bases, dct):
         '''Class has already been created ... register'''
         # Initialize the class
-        super(MetaOandaBroker, cls).__init__(name, bases, dct)
+        super(MetaKabuSBroker, cls).__init__(name, bases, dct)
         KabuSAPIStore.BrokerCls = cls
-MetaKabuSBroker = MetaOandaBroker
+#MetaKabuSBroker = MetaOandaBroker
 
 
 # ## OandaBroker
 
-# In[ ]:
+# In[14]:
 
 
-class OandaBroker(with_metaclass(MetaOandaBroker, BrokerBase)):
+class KabuSBroker(with_metaclass(MetaKabuSBroker, BrokerBase)):
     '''Broker implementation for Oanda.
 
     This class maps the orders/positions from Oanda to the
@@ -925,12 +943,13 @@ class OandaBroker(with_metaclass(MetaOandaBroker, BrokerBase)):
     params = (
         ('use_positions', True),
         ('commission', OandaCommInfo(mult=1.0, stocklike=False)),
+        ('handler', None),
     )
 
     def __init__(self, **kwargs):
-        super(OandaBroker, self).__init__()
+        super(KabuSBroker, self).__init__()
 
-        self.o = KabuSAPIStore(**kwargs)
+        self.o = KabuSAPIStore(**kwargs)  # TODO: self.o は Oanda の o
 
         self.orders = collections.OrderedDict()  # orders by order id
         self.notifs = collections.deque()  # holds orders which are notified
@@ -943,7 +962,7 @@ class OandaBroker(with_metaclass(MetaOandaBroker, BrokerBase)):
         self.positions = collections.defaultdict(Position)
 
     def start(self):
-        super(OandaBroker, self).start()
+        super(KabuSBroker, self).start()
         self.o.start(broker=self)
         self.startingcash = self.cash = cash = self.o.get_cash()
         self.startingvalue = self.value = self.o.get_value()
@@ -994,7 +1013,7 @@ class OandaBroker(with_metaclass(MetaOandaBroker, BrokerBase)):
             self.notify(order)
 
     def stop(self):
-        super(OandaBroker, self).stop()
+        super(KabuSBroker, self).stop()
         self.o.stop()
 
     def getcash(self):
@@ -1210,13 +1229,13 @@ class OandaBroker(with_metaclass(MetaOandaBroker, BrokerBase)):
 
 # ## KabuSBroker
 
-# In[ ]:
+# In[15]:
 
 
-KabuSBroker = OandaBroker
+#KabuSBroker = OandaBroker
 
 
-# In[ ]:
+# In[29]:
 
 
 import pprint
@@ -1232,17 +1251,19 @@ class MetaOandaData(DataBase.__class__):
         KabuSAPIStore.DataCls = cls
 
 
+from logging import DEBUG
+from backtrader.feed import DataBase
 class OandaData(with_metaclass(MetaOandaData, DataBase)): # FIXME
     def __init__(self, *args, **kwargs):
-        pp = pprint.PrettyPrinter()
-        pp.pprint(args)
-        pp.pprint(kwargs)
-        pp.pprint(f'{self} called.')
+        logger = KabuSLogger(__class__.__name__, DEBUG)
+        logger.debug(args)
+        logger.debug(kwargs)
+        logger.debug(f'{__class__.__name__} called.')
 
 
 # ## Test
 
-# In[ ]:
+# In[17]:
 
 
 # https://community.backtrader.com/topic/1570/oanda-data-feed
@@ -1263,7 +1284,7 @@ class TestStrategy(bt.Strategy):
         self.log('Close, %.2f' % self.dataclose[0])
 
 
-# In[ ]:
+# In[30]:
 
 
 import os
@@ -1275,11 +1296,10 @@ if __name__ == '__main__':
 
     password = os.environ.get('PASSWORD')
     # Create oandastore
-    kabusapistore = KabuSAPIStore(password = password)
-    kabusapistore.BrokerCls = KabuSBroker()
-    kabusapistore.DataCls = OandaBroker()
+    #kabusapistore.BrokerCls = KabuSBroker()
+    #kabusapistore.DataCls = OandaBroker()
     # instantiate data    
-    data = kabusapistore.getdata(dataname='EUR_USD', 
+    data = KabuSAPIStore.getdata(dataname='EUR_USD', 
                        compression=1,
                        backfill=False,
                        fromdate=datetime(2018, 1, 1),
@@ -1287,7 +1307,9 @@ if __name__ == '__main__':
                        qcheck=0.5,
                        timeframe=bt.TimeFrame.Minutes,
                        backfill_start=False,
-                       historical=False)
+                       historical=False,
+                       password = password,
+                       handler = handler)
 
 
     # Add the Data Feed to Cerebro
