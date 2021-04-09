@@ -38,71 +38,17 @@ if is_in_jupyter():
 
 # ## Logger
 
-# In[4]:
+# In[8]:
 
 
-from logging import Handler, StreamHandler, Formatter, DEBUG, INFO, WARN
-class KabuSHandler(StreamHandler):
-    def __init__(self, loglevel: int=INFO):
-        super().__init__()
-        self.setLevel(loglevel)
-        self.setFormatter(
-          Formatter('[%(levelname)s] %(message)s'))
-    
-handler = KabuSHandler(DEBUG)
-
-
-# In[25]:
-
-
-# ログ用
-from logging import Logger, Handler, getLogger, StreamHandler, Formatter, DEBUG, INFO, WARN
-from pprint import PrettyPrinter
-class KabuSLogger:
-    # VERBOSE = DEBUG / 2
-    def __init__(self, loggername: str=__name__,
-                loglevel_logger: int=DEBUG):
-        self._logger_name = loggername
-        self._loglevel_logger = loglevel_logger
-        self._logger = self.logger
-    
-    @property
-    def logger(self) -> Logger:
-        if '_logger' in globals():
-            return self._logger
-        logger = getLogger(self._logger_name)
-        logger.setLevel(self._loglevel_logger)
-        logger.propagate = False
-        return logger
-    
-    def addHandler(self, handler: Handler):
-        self.logger.addHandler(handler)
-        
-    # def verbose(self, msg, *args, **kwargs):
-    #     self.log(self.VERBOSE, msg, args, kwargs)
-        
-    def debug(self, msg, **kwargs):
-        self.log(DEBUG, msg, **kwargs)
-        
-    def info(self, msg, **kwargs):
-        self.log(INFO, msg, **kwargs)
-        
-    def warn(self, msg, **kwargs):
-        self.log(WARN, msg, **kwargs)
-        
-    def log(self, level, msg, **kwargs):
-        if kwargs:
-            self._logger.log(level, msg, **kwargs)
-        else:
-            self._logger.log(level, msg)
+from kabu_s_handler import KabuSHandler
+from kabu_s_logger import KabuSLogger
 
 if not 'logger' in globals():
+    from logging import DEBUG
+    handler = KabuSHandler(DEBUG)
     logger = KabuSLogger(__name__, DEBUG)
     logger.addHandler(handler)
-
-
-# In[6]:
-
 
 logger.debug('test')
 logger.info('test')
@@ -110,7 +56,7 @@ logger.info('test')
 
 # ## Main
 
-# In[7]:
+# In[ ]:
 
 
 #!/usr/bin/env python
@@ -159,7 +105,9 @@ kabusapi.Context
 
 # ## for reference
 
-# In[8]:
+# ## for reference
+
+# In[ ]:
 
 
 # Extend the exceptions to support extra cases
@@ -222,9 +170,7 @@ kabusapi.Context
 #         return content
 
 
-# ## for reference
-
-# In[9]:
+# In[ ]:
 
 
 #FIXME
@@ -296,37 +242,38 @@ kabusapi.Context
 
 # ## KabuSAPIEnv
 
-# In[10]:
+# In[ ]:
 
 
-from enum import Enum
-class KabuSAPIEnv(Enum):
-    DEV = 'dev'
-    PROD = 'prod'
+# from enum import Enum
+# class KabuSAPIEnv(Enum):
+#     DEV = 'dev'
+#     PROD = 'prod'
 
 
 # ## MetaSingleton
 
-# In[11]:
+# In[9]:
 
 
-class MetaSingleton(MetaParams):
-    '''Metaclass to make a metaclassed class a singleton'''
-    def __init__(cls, name, bases, dct):
-        super(MetaSingleton, cls).__init__(name, bases, dct)
-        cls._singleton = None
-
-    def __call__(cls, *args, **kwargs):
-        if cls._singleton is None:
-            cls._singleton = (
-                super(MetaSingleton, cls).__call__(*args, **kwargs))
-
-        return cls._singleton
+from backtrader.store import MetaSingleton
+#class MetaSingleton(MetaParams):
+#    '''Metaclass to make a metaclassed class a singleton'''
+#    def __init__(cls, name, bases, dct):
+#        super(MetaSingleton, cls).__init__(name, bases, dct)
+#        cls._singleton = None
+#
+#    def __call__(cls, *args, **kwargs):
+#        if cls._singleton is None:
+#            cls._singleton = (
+#                super(MetaSingleton, cls).__call__(*args, **kwargs))
+#
+#        return cls._singleton
 
 
 # ## KabuSAPIStore
 
-# In[22]:
+# In[ ]:
 
 
 class KabuSAPIStore(with_metaclass(MetaSingleton, object)):
@@ -855,7 +802,7 @@ class KabuSAPIStore(with_metaclass(MetaSingleton, object)):
 
 # ## KabuSAPICommInfo
 
-# In[13]:
+# In[ ]:
 
 
 # WIP
@@ -923,7 +870,7 @@ class MetaKabuSBroker(BrokerBase.__class__):
 
 # ## OandaBroker
 
-# In[14]:
+# In[ ]:
 
 
 class KabuSBroker(with_metaclass(MetaKabuSBroker, BrokerBase)):
@@ -1229,13 +1176,13 @@ class KabuSBroker(with_metaclass(MetaKabuSBroker, BrokerBase)):
 
 # ## KabuSBroker
 
-# In[15]:
+# In[ ]:
 
 
 #KabuSBroker = OandaBroker
 
 
-# In[29]:
+# In[ ]:
 
 
 import pprint
@@ -1263,7 +1210,7 @@ class OandaData(with_metaclass(MetaOandaData, DataBase)): # FIXME
 
 # ## Test
 
-# In[17]:
+# In[ ]:
 
 
 # https://community.backtrader.com/topic/1570/oanda-data-feed
@@ -1284,7 +1231,7 @@ class TestStrategy(bt.Strategy):
         self.log('Close, %.2f' % self.dataclose[0])
 
 
-# In[30]:
+# In[ ]:
 
 
 import os

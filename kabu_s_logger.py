@@ -7,7 +7,7 @@
 
 
 
-# In[ ]:
+# In[2]:
 
 
 # ログ用
@@ -49,6 +49,18 @@ class KabuSLogger:
             self._logger.log(level, msg, **kwargs)
         else:
             self._logger.log(level, msg)
+
+
+# In[4]:
+
+
+if __name__ == '__main__':
+    from kabu_s_handler import KabuSHandler
+    handler = KabuSHandler()
+    logger = KabuSLogger(__name__)
+    logger.addHandler(handler)
+    logger.debug('test')
+    logger.info('test')
 
 
 # In[ ]:
