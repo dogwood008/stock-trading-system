@@ -19,13 +19,21 @@ def set_stylesheet():
 set_stylesheet()
 
 
-# In[5]:
+# In[10]:
 
 
-from kabu_s_api_env import KabuSAPIEnv
 from backtrader.store import MetaSingleton
 from backtrader.utils.py3 import with_metaclass
+
+import kabusapi
 import backtrader as bt
+
+import collections
+import threading
+
+from logging import DEBUG, INFO
+from kabu_s_logger import KabuSLogger
+from kabu_s_api_env import KabuSAPIEnv
 
 class KabuSAPIStore(with_metaclass(MetaSingleton, object)):
     '''Singleton class wrapping to control the connections to Kabu STATION API.
@@ -549,6 +557,13 @@ class KabuSAPIStore(with_metaclass(MetaSingleton, object)):
                 self.broker._cancel(oref)
             else:  # default action ... if nothing else
                 self.broker._reject(oref)
+
+
+# In[11]:
+
+
+if __name__ == '__main__':
+    store = KabuSAPIStore()
 
 
 # In[ ]:
