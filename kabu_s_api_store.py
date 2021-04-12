@@ -559,11 +559,30 @@ class KabuSAPIStore(with_metaclass(MetaSingleton, object)):
                 self.broker._reject(oref)
 
 
-# In[11]:
+# In[17]:
 
 
 if __name__ == '__main__':
-    store = KabuSAPIStore()
+    from datetime import datetime
+    import os
+    from logging import DEBUG
+    from kabu_s_handler import KabuSHandler
+    from kabu_s_data import KabuSData
+    
+    password = os.environ.get('PASSWORD')
+    handler = KabuSHandler(DEBUG)
+    KabuSAPIStore.DataCls = KabuSData
+    data = KabuSAPIStore.getdata(dataname='EUR_USD', 
+                       compression=1,
+                       backfill=False,
+                       fromdate=datetime(2018, 1, 1),
+                       todate=datetime(2019, 1, 1),
+                       qcheck=0.5,
+                       timeframe=bt.TimeFrame.Minutes,
+                       backfill_start=False,
+                       historical=False,
+                       password = password,
+                       handler = handler)    
 
 
 # In[ ]:
