@@ -559,7 +559,7 @@ class KabuSAPIStore(with_metaclass(MetaSingleton, object)):
                 self.broker._reject(oref)
 
 
-# In[17]:
+# In[22]:
 
 
 if __name__ == '__main__':
@@ -572,7 +572,7 @@ if __name__ == '__main__':
     password = os.environ.get('PASSWORD')
     handler = KabuSHandler(DEBUG)
     KabuSAPIStore.DataCls = KabuSData
-    data = KabuSAPIStore.getdata(dataname='EUR_USD', 
+    data = KabuSAPIStore.getdata(dataname='EUR_USD',
                        compression=1,
                        backfill=False,
                        fromdate=datetime(2018, 1, 1),
@@ -583,10 +583,4 @@ if __name__ == '__main__':
                        historical=False,
                        password = password,
                        handler = handler)    
-
-
-# In[ ]:
-
-
-
 
