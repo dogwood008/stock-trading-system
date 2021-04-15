@@ -7,7 +7,7 @@
 
 
 
-# In[1]:
+# In[ ]:
 
 
 # https://recruit-tech.co.jp/blog/2018/10/16/jupyter_notebook_tips/
@@ -19,7 +19,7 @@ def set_stylesheet():
 set_stylesheet()
 
 
-# In[10]:
+# In[8]:
 
 
 from backtrader.store import MetaSingleton
@@ -35,6 +35,8 @@ from logging import DEBUG, INFO
 from kabu_s_logger import KabuSLogger
 from kabu_s_api_env import KabuSAPIEnv
 
+if 'KabuSAPIStore' in globals():
+    del KabuSAPIStore
 class KabuSAPIStore(with_metaclass(MetaSingleton, object)):
     '''Singleton class wrapping to control the connections to Kabu STATION API.
 
@@ -54,7 +56,7 @@ class KabuSAPIStore(with_metaclass(MetaSingleton, object)):
     DataCls = None  # data class will auto register
 
     params = (
-        ('url', 'localhost'),
+        ('host', 'localhost'),
         ('env', KabuSAPIEnv.DEV),
         ('port', None),
         ('password', None),
@@ -83,11 +85,11 @@ class KabuSAPIStore(with_metaclass(MetaSingleton, object)):
             return 18081 if self.p.env == KabuSAPIEnv.DEV else 18080
 
         def _init_kabusapi_client() -> kabusapi.Context:
-            url = self.p.url
+            host = self.p.host
             port = self.p.port or _getport()
             password = self.p.password
-            token = kabusapi.Context(url, port, password).token
-            self.kapi = kabusapi.Context(url, port, token=token)
+            token = kabusapi.Context(host, port, password).token
+            self.kapi = kabusapi.Context(host, port, token=token)
             self._logger.debug('_init_kabusapi_client() called')
             
         super(KabuSAPIStore, self).__init__()
@@ -179,7 +181,8 @@ class KabuSAPIStore(with_metaclass(MetaSingleton, object)):
     def get_positions(self):
         try:
             positions = self.kapi.positions()
-        except (oandapy.OandaError, OandaRequestError,):
+        except:
+            from IPython.core.debugger import Pdb; Pdb().set_trace()
             # FIXME: Error handling
             return None
 
@@ -559,7 +562,7 @@ class KabuSAPIStore(with_metaclass(MetaSingleton, object)):
                 self.broker._reject(oref)
 
 
-# In[22]:
+# In[10]:
 
 
 if __name__ == '__main__':
@@ -569,18 +572,33 @@ if __name__ == '__main__':
     from kabu_s_handler import KabuSHandler
     from kabu_s_data import KabuSData
     
+    get_data = False
+    if get_data:
+        password = os.environ.get('PASSWORD')
+        if not 'handler' in globals:
+            handler = KabuSHandler(DEBUG)
+        KabuSAPIStore.DataCls = KabuSData
+        data = KabuSAPIStore.getdata(dataname='EUR_USD',
+                           compression=1,
+                           backfill=False,
+                           fromdate=datetime(2018, 1, 1),
+                           todate=datetime(2019, 1, 1),
+                           qcheck=0.5,
+                           timeframe=bt.TimeFrame.Minutes,
+                           backfill_start=False,
+                           historical=False,
+                           password = password,
+                           handler = handler)    
+    host = 'host.docker.internal'
     password = os.environ.get('PASSWORD')
-    handler = KabuSHandler(DEBUG)
-    KabuSAPIStore.DataCls = KabuSData
-    data = KabuSAPIStore.getdata(dataname='EUR_USD',
-                       compression=1,
-                       backfill=False,
-                       fromdate=datetime(2018, 1, 1),
-                       todate=datetime(2019, 1, 1),
-                       qcheck=0.5,
-                       timeframe=bt.TimeFrame.Minutes,
-                       backfill_start=False,
-                       historical=False,
-                       password = password,
-                       handler = handler)    
+    port = 8081
+    store = KabuSAPIStore(password=password, host=host, port=port)
+    import pprint; pp = pprint.PrettyPrinter()
+    pp.pprint(store.get_positions())
+
+
+# In[ ]:
+
+
+
 
