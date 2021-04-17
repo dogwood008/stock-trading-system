@@ -7,7 +7,7 @@
 
 
 
-# In[ ]:
+# In[1]:
 
 
 # https://recruit-tech.co.jp/blog/2018/10/16/jupyter_notebook_tips/
@@ -19,7 +19,7 @@ def set_stylesheet():
 set_stylesheet()
 
 
-# In[8]:
+# In[2]:
 
 
 from backtrader.store import MetaSingleton
@@ -179,15 +179,8 @@ class KabuSAPIStore(with_metaclass(MetaSingleton, object)):
     # }
 
     def get_positions(self):
-        try:
-            positions = self.kapi.positions()
-        except:
-            from IPython.core.debugger import Pdb; Pdb().set_trace()
-            # FIXME: Error handling
-            return None
-
-        poslist = positions.get('positions', [])
-        return poslist
+        positions = self.kapi.positions()
+        return positions
 
     #def get_granularity(self, timeframe, compression):
     #    return self._GRANULARITIES.get((timeframe, compression), None)
@@ -562,7 +555,7 @@ class KabuSAPIStore(with_metaclass(MetaSingleton, object)):
                 self.broker._reject(oref)
 
 
-# In[10]:
+# In[3]:
 
 
 if __name__ == '__main__':
