@@ -1,35 +1,31 @@
 #!/usr/bin/env python
 # coding: utf-8
 
-# In[ ]:
-
-
-
-
-
-# In[1]:
-
-
+# %%: Set stylesheet if in Jupyter
 # https://recruit-tech.co.jp/blog/2018/10/16/jupyter_notebook_tips/
 def set_stylesheet():
-    from IPython.display import display, HTML
-    css = get_ipython().getoutput('wget https://raw.githubusercontent.com/lapis-zero09/jupyter_notebook_tips/master/css/jupyter_notebook/monokai.css -q -O -')
-    css = "\n".join(css)
-    display(HTML('<style type="text/css">%s</style>'%css))
+    try:
+        from IPython.display import display, HTML
+        css = get_ipython().getoutput('wget https://raw.githubusercontent.com/lapis-zero09/jupyter_notebook_tips/master/css/jupyter_notebook/monokai.css -q -O -')
+        css = "\n".join(css)
+        display(HTML('<style type="text/css">%s</style>'%css))
+    except:
+        pass
 set_stylesheet()
 
 
-# In[2]:
 
-
+# %%: Define class KabuSAPIStore
 from backtrader.store import MetaSingleton
-from backtrader.utils.py3 import with_metaclass
+from backtrader.utils.py3 import queue, with_metaclass
 
 import kabusapi
 import backtrader as bt
 
 import collections
 import threading
+
+from datetime import timedelta, strptime
 
 from logging import DEBUG, INFO
 from kabu_s_logger import KabuSLogger
@@ -357,32 +353,32 @@ class KabuSAPIStore(with_metaclass(MetaSingleton, object)):
 
     def order_create(self, order, stopside=None, takeside=None, **kwargs):
         okwargs = dict()
-        okwargs['instrument'] = order.data._dataname
-        okwargs['units'] = abs(order.created.size)
-        okwargs['side'] = 'buy' if order.isbuy() else 'sell'
-        okwargs['type'] = self._ORDEREXECS[order.exectype]
+        okwargs['Symbol'] = order.data._dataname
+        okwargs['Qty'] = abs(order.created.size)
+        okwargs['Side'] = '2' if order.isbuy() else '1'
+        okwargs['FrontOrderType'] = self._ORDEREXECS[order.exectype]
         if order.exectype != bt.Order.Market:
-            okwargs['price'] = order.created.price
+            okwargs['Price'] = order.created.price
             if order.valid is None:
-                # 1 year and datetime.max fail ... 1 month works
-                valid = datetime.utcnow() + timedelta(days=30)
+                # maximum is 3 weeks later
+                # https://kabu.com/rule/stock_trading.html#:~:text=%E3%81%94%E6%B3%A8%E6%96%87%E3%81%AE%E6%9C%89%E5%8A%B9%E6%9C%9F%E9%99%90,%E3%81%99%E3%82%8B%E3%81%93%E3%81%A8%E3%82%82%E5%8F%AF%E8%83%BD%E3%81%A7%E3%81%99%E3%80%82
+                okwargs['ExpireDay'] = 0 # today
             else:
                 valid = order.data.num2date(order.valid)
-                # To timestamp with seconds precision
-            okwargs['expiry'] = int((valid - self._DTEPOCH).total_seconds()) # FIXME: _DTEPOCH
+                okwargs['ExpireDay'] = int(valid.strftime('%Y%m%d'))
 
-        if order.exectype == bt.Order.StopLimit:
-            okwargs['lowerBound'] = order.created.pricelimit
-            okwargs['upperBound'] = order.created.pricelimit
+        # if order.exectype == bt.Order.StopLimit:
+        #     okwargs['lowerBound'] = order.created.pricelimit
+        #     okwargs['upperBound'] = order.created.pricelimit
 
-        if order.exectype == bt.Order.StopTrail:
-            okwargs['trailingStop'] = order.trailamount
+        # if order.exectype == bt.Order.StopTrail:
+        #     okwargs['trailingStop'] = order.trailamount
 
-        if stopside is not None:
-            okwargs['stopLoss'] = stopside.price
+        # if stopside is not None:
+        #     okwargs['stopLoss'] = stopside.price
 
-        if takeside is not None:
-            okwargs['takeProfit'] = takeside.price
+        # if takeside is not None:
+        #     okwargs['takeProfit'] = takeside.price
 
         okwargs.update(**kwargs)  # anything from the user
 
@@ -555,9 +551,7 @@ class KabuSAPIStore(with_metaclass(MetaSingleton, object)):
                 self.broker._reject(oref)
 
 
-# In[3]:
-
-
+# %%: Test
 if __name__ == '__main__':
     from datetime import datetime
     import os
@@ -582,15 +576,20 @@ if __name__ == '__main__':
                            historical=False,
                            password = password,
                            handler = handler)    
-    host = 'host.docker.internal'
-    password = os.environ.get('PASSWORD')
+    host = os.environ.get('KABU_S_HOST')
+    password = os.environ.get('KABU_S_PASSWORD')
     port = 8081
     store = KabuSAPIStore(password=password, host=host, port=port)
     import pprint; pp = pprint.PrettyPrinter()
-    pp.pprint(store.get_positions())
+    def get_positions():
+        print('get_positions()')
+        pp.pprint(store.get_positions())
+    get_positions()
+
+    def 
 
 
-# In[ ]:
+# %%
 
 
 
