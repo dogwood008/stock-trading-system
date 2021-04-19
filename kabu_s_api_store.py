@@ -25,7 +25,7 @@ import backtrader as bt
 import collections
 import threading
 
-from datetime import timedelta, strptime
+from datetime import timedelta
 
 from logging import DEBUG, INFO
 from kabu_s_logger import KabuSLogger
@@ -57,7 +57,9 @@ class KabuSAPIStore(with_metaclass(MetaSingleton, object)):
         ('port', None),
         ('password', None),
         ('logger', None),
-        ('handler', None)
+        ('handler', None),
+        ('headers', {}),
+        ('token', None),
     )
 
     # _DTEPOCH = datetime(1970, 1, 1)
@@ -80,12 +82,16 @@ class KabuSAPIStore(with_metaclass(MetaSingleton, object)):
                 return port
             return 18081 if self.p.env == KabuSAPIEnv.DEV else 18080
 
-        def _init_kabusapi_client() -> kabusapi.Context:
+        def _init_kabusapi_client(
+            token: str=None, headers: dict={}) -> kabusapi.Context:
             host = self.p.host
             port = self.p.port or _getport()
             password = self.p.password
-            token = kabusapi.Context(host, port, password).token
+            if not token:
+                token = kabusapi.Context(host, port, password).token
             self.kapi = kabusapi.Context(host, port, token=token)
+            for k, v in headers.items():
+                self.kapi._set_header(k, v)
             self._logger.debug('_init_kabusapi_client() called')
             
         super(KabuSAPIStore, self).__init__()
@@ -109,7 +115,7 @@ class KabuSAPIStore(with_metaclass(MetaSingleton, object)):
         self._ordersrev = collections.OrderedDict()  # map oid to order.ref
         self._transpend = collections.defaultdict(collections.deque)
 
-        _init_kabusapi_client()
+        _init_kabusapi_client(self.p.token, self.p.headers)
         
         self._cash = 0.0
         self._value = 0.0
@@ -396,7 +402,9 @@ class KabuSAPIStore(with_metaclass(MetaSingleton, object)):
 
             oref, okwargs = msg
             try:
-                o = self.oapi.create_order(self.p.account, **okwargs)
+                # https://github.com/shirasublue/python-kabusapi/blob/master/kabusapi/orders.py
+                # https://github.com/shirasublue/python-kabusapi/blob/7e7a5ac232e037c651b5447b408d8b0b6727c9b0/sample/sample.py#L17-L35
+                o = self.oapi.sendorder(**okwargs)
             except Exception as e:
                 self.put_notification(e)
                 self.broker._reject(oref)
@@ -405,14 +413,15 @@ class KabuSAPIStore(with_metaclass(MetaSingleton, object)):
             # Ids are delivered in different fields and all must be fetched to
             # match them (as executions) to the order generated here
             oids = list()
-            for oidfield in self._OIDSINGLE:
-                if oidfield in o and 'id' in o[oidfield]:
-                    oids.append(o[oidfield]['id'])
+            # for oidfield in self._OIDSINGLE:
+            #     if oidfield in o and 'id' in o[oidfield]:
+            #         oids.append(o[oidfield]['id'])
+            oids.append(o['OrderId'])
 
-            for oidfield in self._OIDMULTIPLE:
-                if oidfield in o:
-                    for suboidfield in o[oidfield]:
-                        oids.append(suboidfield['id'])
+            # for oidfield in self._OIDMULTIPLE:
+            #     if oidfield in o:
+            #         for suboidfield in o[oidfield]:
+            #             oids.append(suboidfield['id'])
 
             if not oids:
                 self.broker._reject(oref)
@@ -420,7 +429,7 @@ class KabuSAPIStore(with_metaclass(MetaSingleton, object)):
 
             self._orders[oref] = oids[0]
             self.broker._submit(oref)
-            if okwargs['type'] == 'market':
+            if okwargs['FrontOrderType'] == 'market':
                 self.broker._accept(oref)  # taken immediately
 
             for oid in oids:
@@ -578,15 +587,18 @@ if __name__ == '__main__':
                            handler = handler)    
     host = os.environ.get('KABU_S_HOST')
     password = os.environ.get('KABU_S_PASSWORD')
-    port = 8081
-    store = KabuSAPIStore(password=password, host=host, port=port)
+    port = os.environ.get('KABU_S_PORT', 8081)
+    headers = {'x-mock-response-code': '200'}
+    store = KabuSAPIStore(password=password, host=host, port=port,
+    headers=headers, token=os.environ.get('POSTMAN_API_KEY'))
     import pprint; pp = pprint.PrettyPrinter()
     def get_positions():
         print('get_positions()')
         pp.pprint(store.get_positions())
     get_positions()
 
-    def 
+    def order_buy():
+        pass
 
 
 # %%
