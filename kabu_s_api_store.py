@@ -357,7 +357,7 @@ class KabuSAPIStore(with_metaclass(MetaSingleton, object)):
 
             self._evt_acct.set()
 
-    def order_create(self, order, stopside=None, takeside=None, **kwargs):
+    def order_create(self, order: bt.Order, stopside=None, takeside=None, **kwargs):
         okwargs = dict()
         okwargs['Symbol'] = order.data._dataname
         okwargs['Qty'] = abs(order.created.size)
@@ -598,7 +598,12 @@ if __name__ == '__main__':
     get_positions()
 
     def order_buy():
-        pass
+        order = bt.BuyOrder(
+            size=100,
+            price=1234
+        )
+        store.order_create(order)
+    order_buy()
 
 
 # %%
