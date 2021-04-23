@@ -25,16 +25,15 @@ from __future__ import (absolute_import, division, print_function,
 
 import argparse
 import datetime
+from kabu_plus_jp_csv_data import KabuPlusJPCSVData
 
 # The above could be sent to an independent module
 import backtrader as bt
-from backtrader.utils import flushfile  # win32 quick stdout flushing
 
 from kabu_s_api_store import KabuSAPIStore
-from kabu_s_data import KabuSData
 
 StoreCls = KabuSAPIStore
-DataCls = KabuSData
+DataCls = KabuPlusJPCSVData
 # BrokerCls = bt.brokers.KabuSBroker
 
 
@@ -182,10 +181,6 @@ class TestStrategy(bt.Strategy):
             self.datastatus += 1
 
     def start(self):
-        if self.data0.contractdetails is not None:
-            print('-- Contract Details:')
-            print(self.data0.contractdetails)
-
         header = ['Datetime', 'Open', 'High', 'Low', 'Close', 'Volume',
                   'OpenInterest', 'SMA']
         print(', '.join(header))
@@ -203,7 +198,7 @@ def runstrategy():
         practice=not args.live,
         port=args.port,
         host=args.host,
-        headers=args.headers,
+        #headers=args.headers,
         api_key=args.api_key,
         postman_return_code=args.postman_return_code,
     )
@@ -240,7 +235,7 @@ def runstrategy():
         dtformat = '%Y-%m-%d' + ('T%H:%M:%S' * ('T' in args.fromdate))
         fromdate = datetime.datetime.strptime(args.fromdate, dtformat)
 
-    DataFactory = DataCls if args.no_store else store.getdata
+    DataFactory = DataCls #  if args.no_store else store.getdata
 
     datakwargs = dict(
         timeframe=datatf, compression=datacomp,

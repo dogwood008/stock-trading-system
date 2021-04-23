@@ -567,24 +567,8 @@ if __name__ == '__main__':
     from logging import DEBUG
     from kabu_s_handler import KabuSHandler
     from kabu_s_data import KabuSData
+    from kabu_plus_jp_csv_data import KabuPlusJPCSVData
     
-    get_data = False
-    if get_data:
-        password = os.environ.get('PASSWORD')
-        if not 'handler' in globals:
-            handler = KabuSHandler(DEBUG)
-        KabuSAPIStore.DataCls = KabuSData
-        data = KabuSAPIStore.getdata(dataname='EUR_USD',
-                           compression=1,
-                           backfill=False,
-                           fromdate=datetime(2018, 1, 1),
-                           todate=datetime(2019, 1, 1),
-                           qcheck=0.5,
-                           timeframe=bt.TimeFrame.Minutes,
-                           backfill_start=False,
-                           historical=False,
-                           password = password,
-                           handler = handler)    
     host = os.environ.get('KABU_S_HOST')
     password = os.environ.get('KABU_S_PASSWORD')
     port = os.environ.get('KABU_S_PORT', 8081)
@@ -592,6 +576,26 @@ if __name__ == '__main__':
     store = KabuSAPIStore(password=password, host=host, port=port,
     headers=headers, token=os.environ.get('POSTMAN_API_KEY'))
     import pprint; pp = pprint.PrettyPrinter()
+
+    def get_data():
+        if not 'handler' in globals():
+            handler = KabuSHandler(DEBUG)
+        KabuSAPIStore.DataCls = KabuPlusJPCSVData
+        data = KabuSAPIStore.getdata(
+                dataname='japan-stock-prices_2021_7974.csv',
+                compression=1,
+                backfill=False,
+                fromdate=datetime(2018, 1, 1),
+                todate=datetime(2019, 1, 1),
+                qcheck=0.5,
+                timeframe=bt.TimeFrame.Minutes,
+                backfill_start=False,
+                historical=True,
+                handler = handler)
+        pp.pprint(data)
+        return data
+    get_data()
+
     def get_positions():
         print('get_positions()')
         pp.pprint(store.get_positions())
