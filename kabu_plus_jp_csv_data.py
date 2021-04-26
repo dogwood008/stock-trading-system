@@ -64,12 +64,12 @@ class KabuPlusJPCSVData(bt.feeds.YahooFinanceCSVData):
         ('swapcloses', False),
         ('headers', True),
         ('header_names', {  # CSVのカラム名と内部的なキーを変換する辞書
-            DATE: 'date',  # FIXME
-            OPEN: 'open',
-            HIGH: 'high',
-            LOW: 'low',
+            DATE: '日付',  # FIXME
+            OPEN: '始値',
+            HIGH: '高値',
+            LOW: '安値',
             CLOSE: 'close',
-            VOLUME: 'volumes',
+            VOLUME: '出来高',
             ADJUSTED_CLOSE: 'adj_close',
         }),
         ('tz', pytz.timezone('Asia/Tokyo')),
