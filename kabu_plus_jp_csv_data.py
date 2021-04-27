@@ -20,6 +20,7 @@
 import csv
 import io
 import pytz
+import re
 from datetime import date, datetime
 from backtrader.utils import date2num
 from typing import Any
@@ -68,12 +69,15 @@ class KabuPlusJPCSVData(bt.feeds.YahooFinanceCSVData):
             OPEN: '始値',
             HIGH: '高値',
             LOW: '安値',
-            CLOSE: 'close',
+            CLOSE: '株価',
             VOLUME: '出来高',
             ADJUSTED_CLOSE: 'adj_close',
         }),
         ('tz', pytz.timezone('Asia/Tokyo')),
-        ('encoding', 'shift_jis')
+        ('encoding', 'shift_jis'),
+        ('quotechar', '"'),
+        ('delimiter', ','),
+        ('newline', '\r\n'),
     )
 
     def _fetch_value(self, values: dict, column_name: str) -> Any:
@@ -101,11 +105,22 @@ class KabuPlusJPCSVData(bt.feeds.YahooFinanceCSVData):
                 self.f = self.p.dataname
             else:
                 # Let an exception propagate to let the caller know
-                self.f = io.open(self.p.dataname, 'r', encoding=self.p.encoding)
+                self.f = io.open(self.p.dataname, 'r',
+                    encoding=self.p.encoding,
+                    newline=self.p.newline)
+                # https://docs.python.org/ja/3/library/csv.html
+                # csvfile がファイルオブジェクトの場合、 newline='' として開くべきです。
 
         if self.p.headers and self.p.header_names:
-            _csv_reader = csv.reader([self.f.readline()])
-            self._csv_headers = next(_csv_reader)
+            line = self.f.readline()
+            # CSVとしての読み込みがうまくいかないので、手動でパースする
+            # _csv_reader = csv.reader(line,
+            #     delimiter=self.p.delimiter,
+            #     quotechar=self.p.quotechar,
+            #     quoting=csv.QUOTE_ALL,
+            #     skipinitialspace=True)
+            headers = re.sub(r'["\r\n]', '', line).split(',')
+            self._csv_headers = headers
 
         self.separator = self.p.separator
 
@@ -127,6 +142,7 @@ class KabuPlusJPCSVData(bt.feeds.YahooFinanceCSVData):
                 break  # can proceed
 
         dttxt = self._fetch_value(linetokens, self.DATE)
+        import pdb; pdb.set_trace() 
         dt = date(int(dttxt[0:4]), int(dttxt[5:7]), int(dttxt[8:10]))
         dtnum = date2num(datetime.combine(dt, self.p.sessionend))
         #dtnum = date2num(datetime.combine(dt, self.p.sessionend), tz=pytz.timezone('Asia/Tokyo'))
