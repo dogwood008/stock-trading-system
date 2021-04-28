@@ -19,11 +19,12 @@
 
 import csv
 import io
+from math import e
 import pytz
 import re
 from datetime import date, datetime
 from backtrader.utils import date2num
-from typing import Any
+from typing import Any, List
 import backtrader as bt
 
 class KabuPlusJPCSVData(bt.feeds.YahooFinanceCSVData):
@@ -65,13 +66,13 @@ class KabuPlusJPCSVData(bt.feeds.YahooFinanceCSVData):
         ('swapcloses', False),
         ('headers', True),
         ('header_names', {  # CSVのカラム名と内部的なキーを変換する辞書
-            DATE: '日付',  # FIXME
+            DATE: '日付',
             OPEN: '始値',
             HIGH: '高値',
             LOW: '安値',
-            CLOSE: '株価',
+            #CLOSE: '株価',
             VOLUME: '出来高',
-            ADJUSTED_CLOSE: 'adj_close',
+            ADJUSTED_CLOSE: '株価',
         }),
         ('tz', pytz.timezone('Asia/Tokyo')),
         ('encoding', 'shift_jis'),
@@ -119,20 +120,32 @@ class KabuPlusJPCSVData(bt.feeds.YahooFinanceCSVData):
             #     quotechar=self.p.quotechar,
             #     quoting=csv.QUOTE_ALL,
             #     skipinitialspace=True)
-            headers = re.sub(r'["\r\n]', '', line).split(',')
+            headers = self._parse_csv_row(line)
             self._csv_headers = headers
 
         self.separator = self.p.separator
 
+    # CSVとしての読み込みがうまくいかないので、手動でパースする
+    def _parse_csv_row(self, row: str) -> List[str]:
+        return self._remove_quotes_newlines(row).split(',')
 
-    def _loadline(self, linetokens):
+    # クオートと改行文字を取り除く
+    def _remove_quotes_newlines(self, txt: str) -> str:
+        try:
+            regex = r'[%s%s]' % (self.p.newline, self.p.quotechar)
+            return re.sub(regex, '', txt)
+        except Exception as e:
+            print(e)
+
+
+    def _loadline(self, linetokens_with_quotes_newlines):
         while True:
             nullseen = False
-            for tok in linetokens[1:]:
+            for tok in linetokens_with_quotes_newlines[1:]:
                 if tok == 'null':
                     nullseen = True
-                    linetokens = self._getnextline()  # refetch tokens
-                    if not linetokens:
+                    linetokens_with_quotes_newlines = self._getnextline()  # refetch tokens
+                    if not linetokens_with_quotes_newlines:
                         return False  # cannot fetch, go away
 
                     # out of for to carry on wiwth while True logic
@@ -140,10 +153,11 @@ class KabuPlusJPCSVData(bt.feeds.YahooFinanceCSVData):
 
             if not nullseen:
                 break  # can proceed
+        linetokens = list(map(self._remove_quotes_newlines,
+                            linetokens_with_quotes_newlines))
 
-        dttxt = self._fetch_value(linetokens, self.DATE)
-        import pdb; pdb.set_trace() 
-        dt = date(int(dttxt[0:4]), int(dttxt[5:7]), int(dttxt[8:10]))
+        dttxt = self._fetch_value(linetokens, self.DATE) # e.g. 20210104
+        dt = date(int(dttxt[0:4]), int(dttxt[4:6]), int(dttxt[6:8]))
         dtnum = date2num(datetime.combine(dt, self.p.sessionend))
         #dtnum = date2num(datetime.combine(dt, self.p.sessionend), tz=pytz.timezone('Asia/Tokyo'))
 

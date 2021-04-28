@@ -188,8 +188,8 @@ class TestStrategy(bt.Strategy):
         self.done = False
 
 
-def runstrategy():
-    args = parse_args()
+def runstrategy(args={}):
+    args = parse_args(args)
 
     # Create a cerebro
     cerebro = bt.Cerebro()
@@ -510,4 +510,16 @@ def parse_args(pargs=None):
 
 
 if __name__ == '__main__':
-    runstrategy()
+    if __debug__:
+        import os
+        args = [
+            '--data0', 'japan-stock-prices_2021_7974.csv',
+            '--host', os.environ.get('KABU_S_HOST'),
+            '--port', os.environ.get('KABU_S_PORT'),
+            '--api_key', os.environ.get('POSTMAN_API_KEY'),
+            '--postman_return_code', '200',
+            '--debug',
+        ]
+        runstrategy(args)
+    else:
+        runstrategy()
