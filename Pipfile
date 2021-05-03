@@ -13,6 +13,9 @@ jupyter_nbextensions_configurator = "*"
 autopep8 = "*"
 jupyterlab-legos-ui = "*"
 jupyterthemes = "*"
+dill = "*"
+jpbizday = "*"
+beautifulsoup4 = "*"
 
 [dev-packages]
 jupyter = "*"
