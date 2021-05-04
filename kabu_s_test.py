@@ -31,6 +31,9 @@ from kabu_plus_jp_csv_data import KabuPlusJPCSVData
 import backtrader as bt
 
 from kabu_s_api_store import KabuSAPIStore
+from kabu_s_logger import KabuSLogger
+from kabu_s_handler import KabuSHandler
+from logging import DEBUG
 
 StoreCls = KabuSAPIStore
 DataCls = KabuPlusJPCSVData
@@ -49,6 +52,7 @@ class TestStrategy(bt.Strategy):
         donotcounter=False,
         sell=False,
         usebracket=False,
+        logger=None
     )
 
     def __init__(self):
@@ -92,6 +96,7 @@ class TestStrategy(bt.Strategy):
         self.next(frompre=True)
 
     def next(self, frompre=False):
+        self.p.logger.debug('next() called')
         txt = list()
         txt.append('Data0')
         txt.append('%04d' % len(self.data0))
@@ -297,6 +302,10 @@ def runstrategy(args={}):
     else:
         valid = datetime.timedelta(seconds=args.valid)
     # Add the strategy
+
+    handler = KabuSHandler(DEBUG)
+    logger = KabuSLogger(__name__, DEBUG)
+    logger.addHandler(handler=handler)
     cerebro.addstrategy(TestStrategy,
                         smaperiod=args.smaperiod,
                         trade=args.trade,
@@ -307,7 +316,8 @@ def runstrategy(args={}):
                         cancel=args.cancel,
                         donotcounter=args.donotcounter,
                         sell=args.sell,
-                        usebracket=args.usebracket)
+                        usebracket=args.usebracket,
+                        logger=logger)
 
     # Live data ... avoid long data accumulation by switching to "exactbars"
     cerebro.run(exactbars=args.exactbars)
@@ -513,7 +523,7 @@ if __name__ == '__main__':
     if __debug__:
         import os
         args = [
-            '--data0', 'japan-stock-prices_2021_7974.csv',
+            '--data0', 'japan-stock-prices_2020_9143_adj.csv',
             '--host', os.environ.get('KABU_S_HOST'),
             '--port', os.environ.get('KABU_S_PORT'),
             '--api_key', os.environ.get('POSTMAN_API_KEY'),

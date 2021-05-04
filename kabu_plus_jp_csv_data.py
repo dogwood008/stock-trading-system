@@ -17,7 +17,6 @@
 #    along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #############################################################
 
-import csv
 import io
 from math import e
 import pytz
@@ -26,6 +25,8 @@ from datetime import date, datetime
 from backtrader.utils import date2num
 from typing import Any, List
 import backtrader as bt
+from add_adj_close import AddAdjClose
+import pandas as pd
 
 class KabuPlusJPCSVData(bt.feeds.YahooFinanceCSVData):
     '''
@@ -66,6 +67,15 @@ class KabuPlusJPCSVData(bt.feeds.YahooFinanceCSVData):
         ('swapcloses', False),
         ('headers', True),
         ('header_names', {  # CSVのカラム名と内部的なキーを変換する辞書
+            DATE: 'date',
+            OPEN: 'open',
+            HIGH: 'high',
+            LOW: 'low',
+            CLOSE: 'close',
+            VOLUME: 'volumes',
+            ADJUSTED_CLOSE: 'adj_close',
+        }),
+        ('header_names_raw', {  # CSVのカラム名と内部的なキーを変換する辞書
             DATE: '日付',
             OPEN: '始値',
             HIGH: '高値',
@@ -75,10 +85,12 @@ class KabuPlusJPCSVData(bt.feeds.YahooFinanceCSVData):
             ADJUSTED_CLOSE: '株価',
         }),
         ('tz', pytz.timezone('Asia/Tokyo')),
-        ('encoding', 'shift_jis'),
+        ('encoding', 'utf-8'),
+        ('encoding_raw', 'shift_jis'),
         ('quotechar', '"'),
         ('delimiter', ','),
         ('newline', '\r\n'),
+        ('load_csv_before_add_adj_close', True),  # 調整後終値付加前のデータを読むならTrue
     )
 
     def _fetch_value(self, values: dict, column_name: str) -> Any:
@@ -99,6 +111,19 @@ class KabuPlusJPCSVData(bt.feeds.YahooFinanceCSVData):
 
     # copied from https://github.com/mementum/backtrader/blob/0426c777b0abdfafbb0988f5c31347553256a2de/backtrader/feed.py#L666-L679
     def start(self):
+        if self.p.load_csv_before_add_adj_close:
+            self._start_with_convert()
+        else:
+            self._start_without_convert()
+
+    def _start_with_convert(self):
+        adj_rates: pd.DataFrame = \
+            AddAdjClose.load_from_dill('./rates_df.dill')
+        AddAdjClose.get_adj_rate
+        hist_data_df: pd.DataFrame = \
+            AddAdjClose.hist_data(self.p.dataname)
+
+    def _start_without_convert(self):
         super(bt.feed.CSVDataBase, self).start()
 
         if self.f is None:

@@ -16,8 +16,9 @@ from backtrader.utils.py3 import with_metaclass
 
 from meta_kabu_s_data import MetaKabuSData
 from kabu_s_logger import KabuSLogger
+from kabu_s_data import KabuSData
 
-class KabuSData(with_metaclass(MetaKabuSData, DataBase)): # FIXME
+class KabuSDataWithAdj(KabuSData): # FIXME
     def __init__(self, *args, **kwargs):
         if 'handler' in kwargs:
             logger = KabuSLogger(__class__.__name__, DEBUG)
