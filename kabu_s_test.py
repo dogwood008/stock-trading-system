@@ -523,7 +523,7 @@ if __name__ == '__main__':
     if __debug__:
         import os
         args = [
-            '--data0', 'japan-stock-prices_2020_9143_adj.csv',
+            '--data0', 'japan-stock-prices_2020_9143.csv',
             '--host', os.environ.get('KABU_S_HOST'),
             '--port', os.environ.get('KABU_S_PORT'),
             '--api_key', os.environ.get('POSTMAN_API_KEY'),

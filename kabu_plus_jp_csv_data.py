@@ -119,9 +119,15 @@ class KabuPlusJPCSVData(bt.feeds.YahooFinanceCSVData):
     def _start_with_convert(self):
         adj_rates: pd.DataFrame = \
             AddAdjClose.load_from_dill('./rates_df.dill')
-        AddAdjClose.get_adj_rate
         hist_data_df: pd.DataFrame = \
             AddAdjClose.hist_data(self.p.dataname)
+        code = hist_data_df.iloc[1:].code
+        year = str(hist_data_df.iloc[1:].date.values[0])[0:4]
+        AddAdjClose.hist_data_with_adj_close(
+        hist_data_df, code, year, adj_rates) \
+            .to_csv('tmp.csv')
+        self.p.dataname = 'tmp.csv'
+        self._start_without_convert()
 
     def _start_without_convert(self):
         super(bt.feed.CSVDataBase, self).start()

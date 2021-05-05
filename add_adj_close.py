@@ -111,7 +111,7 @@ class AddAdjClose:
 
     @classmethod
     def _bizdays(cls, year: int) -> pd.DataFrame:
-        biz_days = jpbizday.year_bizdays(year)
+        biz_days = jpbizday.year_bizdays(int(year))
         biz_dts = map(lambda x: \
             datetime(x.year, x.month, x.day, 15, 0, 0, tzinfo=cls.JST), biz_days)
         bizdays_df = pd.DataFrame({'date': biz_dts}).set_index('date')
@@ -123,7 +123,7 @@ class AddAdjClose:
         '''
         銘柄コード、年、終値調整用比のDFから、調整後終値付きのDFを返す。
         '''
-        adj_rate_for_current_stock: pd.DataFrame = adj_rate_df[adj_rate_df['code'] == code]
+        adj_rate_for_current_stock: pd.DataFrame = adj_rate_df[adj_rate_df['code'] == str(code)]
         joined = cls._bizdays(year).merge(adj_rate_for_current_stock, \
                                     on='date', how='left') \
                             .set_index('date').shift() \
