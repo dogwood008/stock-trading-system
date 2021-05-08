@@ -240,6 +240,11 @@ def runstrategy(args={}):
         dtformat = '%Y-%m-%d' + ('T%H:%M:%S' * ('T' in args.fromdate))
         fromdate = datetime.datetime.strptime(args.fromdate, dtformat)
 
+    todate = None
+    if args.fromdate:
+        todtformat = '%Y-%m-%d' + ('T%H:%M:%S' * ('T' in args.todate))
+        todate = datetime.datetime.strptime(args.todate, todtformat)
+
     DataFactory = DataCls #  if args.no_store else store.getdata
 
     datakwargs = dict(
@@ -247,6 +252,7 @@ def runstrategy(args={}):
         qcheck=args.qcheck,
         historical=args.historical,
         fromdate=fromdate,
+        todate=todate,
         bidask=args.bidask,
         useask=args.useask,
         backfill_start=not args.no_backfill_start,
@@ -402,6 +408,11 @@ def parse_args(pargs=None):
                         help=('Starting date for historical download '
                               'with format: YYYY-MM-DD[THH:MM:SS]'))
 
+    parser.add_argument('--todate',
+                        required=False, action='store',
+                        help=('Starting date for historical download '
+                              'with format: YYYY-MM-DD[THH:MM:SS]'))
+
     parser.add_argument('--smaperiod', default=5, type=int,
                         required=False, action='store',
                         help='Period to apply to the Simple Moving Average')
@@ -528,6 +539,9 @@ if __name__ == '__main__':
             '--port', os.environ.get('KABU_S_PORT'),
             '--api_key', os.environ.get('POSTMAN_API_KEY'),
             '--postman_return_code', '200',
+            '--fromdate', '2020-01-01',
+            '--todate', '2020-12-31',
+            '--historical',
             '--debug',
         ]
         runstrategy(args)
