@@ -219,6 +219,11 @@ def runstrategy(args={}):
 
         cerebro.setbroker(broker)
 
+        if args.cash:
+            cerebro.broker.setcash(float(args.cash))  # 百万円
+        else:
+            cerebro.broker.setcash(10000 * 100)  # 百万円
+
     timeframe = bt.TimeFrame.TFrame(args.timeframe)
     # Manage data1 parameters
     tf1 = args.timeframe1
@@ -334,7 +339,8 @@ def runstrategy(args={}):
                 npkwargs = eval('dict(' + args.plot + ')')  # args were passed
                 pkwargs.update(npkwargs)
 
-            cerebro.plot(**pkwargs)
+            figure = cerebro.plot(**pkwargs)[0][0]
+            figure.savefig('plot.png')
 
 
 def parse_args(pargs=None):
@@ -515,6 +521,10 @@ def parse_args(pargs=None):
                         required=False, action='store',
                         help=('The return code to require to postman mock server.'))
 
+    parser.add_argument('--cash', default=10000.0 * 100, type=float,
+                        required=False, action='store',
+                        help=('Initial cash'))
+
     # Plot options
     parser.add_argument('--plot', '-p', nargs='?', required=False,
                         metavar='kwargs', const=True,
@@ -542,6 +552,7 @@ if __name__ == '__main__':
             '--fromdate', '2020-01-01',
             '--todate', '2020-12-31',
             '--historical',
+            '--plot', 'style="candle"',
             '--debug',
         ]
         runstrategy(args)
