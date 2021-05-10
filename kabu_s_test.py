@@ -66,9 +66,10 @@ class TestStrategy(bt.Strategy):
         # Create SMA on 2nd data
         self.sma = bt.indicators.MovAv.SMA(self.data, period=self.p.smaperiod)
 
-        print('--------------------------------------------------')
-        print('Strategy Created')
-        print('--------------------------------------------------')
+        self.p.logger.debug('-------------------------------------')
+        self.p.logger.debug('Strategy Created')
+        self.p.logger.debug('-------------------------------------')
+        self.p.logger.debug('__init__() called.')
 
     def notify_data(self, data, status, *args, **kwargs):
         print('*' * 5, 'DATA NOTIF:', data._getstatusname(status), *args)
@@ -188,7 +189,7 @@ class TestStrategy(bt.Strategy):
     def start(self):
         header = ['Datetime', 'Open', 'High', 'Low', 'Close', 'Volume',
                   'OpenInterest', 'SMA']
-        print(', '.join(header))
+        self.p.logger.debug(', '.join(header))
 
         self.done = False
 
@@ -542,19 +543,38 @@ def parse_args(pargs=None):
 
 if __name__ == '__main__':
     if __debug__:
+        backcasting = True
         import os
-        args = [
-            '--data0', 'japan-stock-prices_2020_9143.csv',
-            '--host', os.environ.get('KABU_S_HOST'),
-            '--port', os.environ.get('KABU_S_PORT'),
-            '--api_key', os.environ.get('POSTMAN_API_KEY'),
-            '--postman_return_code', '200',
-            '--fromdate', '2020-01-01',
-            '--todate', '2020-12-31',
-            '--historical',
-            '--plot', 'style="candle"',
-            '--debug',
-        ]
+        if backcasting:
+            args = [
+                '--data0', 'japan-stock-prices_2020_9143.csv',
+                '--host', os.environ.get('KABU_S_HOST'),
+                '--port', os.environ.get('KABU_S_PORT'),
+                '--api_key', os.environ.get('POSTMAN_API_KEY'),
+                '--postman_return_code', '200',
+                '--fromdate', '2020-01-01',
+                '--todate', '2020-12-31',
+                '--historical',
+                '--plot', 'style="candle"',
+                '--debug',
+            ]
+        else:
+            args = [
+                '--data0', 'japan-stock-prices_2021_9143.csv',
+                '--host', os.environ.get('KABU_S_HOST'),
+                '--port', os.environ.get('KABU_S_PORT'),
+                '--api_key', os.environ.get('POSTMAN_API_KEY'),
+                '--postman_return_code', '200',
+                '--fromdate', '2021-01-01',
+                '--todate', '2021-05-31',
+                '--plot', 'style="candle"',
+                '--exactbars', '0',
+                '--timeframe', 'Days',
+                '--trade',
+                '--live',
+                '--trade',
+                '--debug',
+            ]
         runstrategy(args)
     else:
         runstrategy()
