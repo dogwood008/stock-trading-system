@@ -71,6 +71,9 @@ class TestStrategy(bt.Strategy):
         self.p.logger.debug('-------------------------------------')
         self.p.logger.debug('__init__() called.')
 
+    def start(self):
+        self.p.logger.debug('start() called.')
+
     def notify_data(self, data, status, *args, **kwargs):
         print('*' * 5, 'DATA NOTIF:', data._getstatusname(status), *args)
         if status == data.LIVE:
@@ -370,7 +373,7 @@ def parse_args(pargs=None):
     #                     help='Account identifier to use')
 
     parser.add_argument('--live', default=None,
-                        required=False, action='store',
+                        required=False, action='store_true',
                         help='Go to live server rather than practice')
 
     parser.add_argument('--qcheck', default=0.5, type=float,
@@ -543,7 +546,8 @@ def parse_args(pargs=None):
 
 if __name__ == '__main__':
     if __debug__:
-        backcasting = True
+        #backcasting = True
+        backcasting = False
         import os
         if backcasting:
             args = [

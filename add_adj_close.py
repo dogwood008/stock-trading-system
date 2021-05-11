@@ -6,7 +6,7 @@ from jpbizday.jpbizday import bizdays
 import pandas as pd
 import numpy as np
 from bs4 import BeautifulSoup
-from typing import List
+from typing import List, Union
 from datetime import datetime, timezone, timedelta
 import argparse
 
@@ -74,7 +74,7 @@ class AddAdjClose:
         dfs['rate'] = dfs['rate'].apply(_convert_to_ratio)
         dfs['adj_rate'] = _adj_rates(dfs)
         dfs['adj_rate'] = dfs['adj_rate'].astype(np.float64)
-        dfs['date'] = dfs['from'].apply(cls.three_separated_digits_to_date) #lambda x: date(*map(lambda y: int(y), x.split('/'))))
+        dfs['date'] = dfs['from'].apply(cls.eight_digits_to_date)
         return _reverse(dfs)[['code', 'name', 'date', 'rate', 'adj_rate']]
 
     @classmethod
@@ -88,11 +88,13 @@ class AddAdjClose:
         return dill.load(open(path_to_dill, 'rb'))
 
     @classmethod
-    def three_separated_digits_to_date(cls, date_str: str) -> datetime:
+    def eight_digits_to_date(cls, date_str: Union[str, int]) -> datetime:
         '''
-        YYYY-MM-DD や YYYY/MM/DD や 'YYYY MM DD' のstrをパースして、datetimeで返す。
+        YYYYMMDD のstrをパースして、datetimeで返す。
         '''
-        ymd = map(lambda x: int(x), re.split('[-/ ]', date_str)[0:3])
+        date_str = str(date_str)
+        ymd_str = (date_str[0:4], date_str[4:6], date_str[6:8])
+        ymd = map(lambda x: int(x), ymd_str)
         return datetime(*ymd, 15, 0, 0, tzinfo=cls.JST)
 
     @classmethod
@@ -103,10 +105,10 @@ class AddAdjClose:
         csv = pd.read_csv(filepath, encoding='shift_jis')
         columns = {'SC': 'code', '名称': 'name', \
                         '市場': 'market', '業種': 'industry', \
-                        '日時': 'date', '株価': 'close', '始値': 'open', \
+                        '日付': 'date', '株価': 'close', '始値': 'open', \
                         '高値': 'high', '安値': 'low', '出来高': 'volumes'}
         csv = csv.rename(columns=columns)
-        csv['date'] = csv['date'].apply(cls.three_separated_digits_to_date)
+        csv['date'] = csv['date'].apply(cls.eight_digits_to_date)
         return csv.loc[:, columns.values()]
 
     @classmethod
