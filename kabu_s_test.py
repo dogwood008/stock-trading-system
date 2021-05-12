@@ -33,11 +33,12 @@ import backtrader as bt
 from kabu_s_api_store import KabuSAPIStore
 from kabu_s_logger import KabuSLogger
 from kabu_s_handler import KabuSHandler
+from kabu_s_broker import KabuSBroker
 from logging import DEBUG
 
 StoreCls = KabuSAPIStore
 DataCls = KabuPlusJPCSVData
-# BrokerCls = bt.brokers.KabuSBroker
+BrokerCls = KabuSBroker
 
 
 class TestStrategy(bt.Strategy):
@@ -70,9 +71,6 @@ class TestStrategy(bt.Strategy):
         self.p.logger.debug('Strategy Created')
         self.p.logger.debug('-------------------------------------')
         self.p.logger.debug('__init__() called.')
-
-    def start(self):
-        self.p.logger.debug('start() called.')
 
     def notify_data(self, data, status, *args, **kwargs):
         print('*' * 5, 'DATA NOTIF:', data._getstatusname(status), *args)
@@ -190,11 +188,15 @@ class TestStrategy(bt.Strategy):
             self.datastatus += 1
 
     def start(self):
+        self.p.logger.debug('start() called.')
         header = ['Datetime', 'Open', 'High', 'Low', 'Close', 'Volume',
                   'OpenInterest', 'SMA']
         self.p.logger.debug(', '.join(header))
 
         self.done = False
+    
+    def stop(self):
+        self.p.logger.debug('stop() called.')
 
 
 def runstrategy(args={}):
@@ -224,9 +226,9 @@ def runstrategy(args={}):
         cerebro.setbroker(broker)
 
         if args.cash:
-            cerebro.broker.setcash(float(args.cash))  # 百万円
+            cerebro.getbroker().setcash(float(args.cash))  # 百万円
         else:
-            cerebro.broker.setcash(10000 * 100)  # 百万円
+            cerebro.getbroker().setcash(10000 * 100)  # 百万円
 
     timeframe = bt.TimeFrame.TFrame(args.timeframe)
     # Manage data1 parameters
@@ -569,12 +571,13 @@ if __name__ == '__main__':
                 '--port', os.environ.get('KABU_S_PORT'),
                 '--api_key', os.environ.get('POSTMAN_API_KEY'),
                 '--postman_return_code', '200',
-                '--fromdate', '2021-01-01',
-                '--todate', '2021-05-31',
+                #'--fromdate', '2021-01-01',  # only for backcasting
+                #'--todate', '2021-05-31',  # only for backcasting
                 '--plot', 'style="candle"',
-                '--exactbars', '0',
-                '--timeframe', 'Days',
-                '--trade',
+                # '--exactbars', '0',
+                #'--timeframe', 'Days',
+                '--timeframe', 'Minutes',
+                '--broker',
                 '--live',
                 '--trade',
                 '--debug',

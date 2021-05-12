@@ -3,6 +3,8 @@
 
 # In[1]:
 
+def get_ipython():
+    return False
 
 # https://recruit-tech.co.jp/blog/2018/10/16/jupyter_notebook_tips/
 def set_stylesheet():
@@ -10,7 +12,8 @@ def set_stylesheet():
     css = get_ipython().getoutput('wget https://raw.githubusercontent.com/lapis-zero09/jupyter_notebook_tips/master/css/jupyter_notebook/monokai.css -q -O -')
     css = "\n".join(css)
     display(HTML('<style type="text/css">%s</style>'%css))
-set_stylesheet()
+if False:
+    set_stylesheet()
 
 
 # In[2]:
@@ -20,6 +23,9 @@ from backtrader.utils.py3 import with_metaclass
 from meta_kabu_s_broker import MetaKabuSBroker, BrokerBase
 from kabu_s_comm_info import KabuSCommInfo
 from kabu_s_api_store import KabuSAPIStore
+
+import collections
+from backtrader.position import Position
 
 class KabuSBroker(with_metaclass(MetaKabuSBroker, BrokerBase)):
     '''Broker implementation for Oanda.
