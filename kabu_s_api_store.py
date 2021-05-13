@@ -198,7 +198,7 @@ class KabuSAPIStore(with_metaclass(MetaSingleton, object)):
     #     return i[0] or None
 
     def streaming_events(self, tmout=None):
-        # q = queue.Queue()
+        q = queue.Queue()
         kwargs = {'q': q, 'tmout': tmout}
 
         t = threading.Thread(target=self._streaming_listener, kwargs=kwargs)

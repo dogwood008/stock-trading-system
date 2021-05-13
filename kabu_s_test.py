@@ -226,9 +226,9 @@ def runstrategy(args={}):
         cerebro.setbroker(broker)
 
         if args.cash:
-            cerebro.getbroker().setcash(float(args.cash))  # 百万円
+            cerebro.getbroker().set_cash(float(args.cash))  # 百万円
         else:
-            cerebro.getbroker().setcash(10000 * 100)  # 百万円
+            cerebro.getbroker().set_cash(10000 * 100)  # 百万円
 
     timeframe = bt.TimeFrame.TFrame(args.timeframe)
     # Manage data1 parameters

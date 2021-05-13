@@ -26,8 +26,9 @@ from kabu_s_api_store import KabuSAPIStore
 
 import collections
 from backtrader.position import Position
+from backtrader.brokers import BackBroker
 
-class KabuSBroker(with_metaclass(MetaKabuSBroker, BrokerBase)):
+class KabuSBroker(with_metaclass(MetaKabuSBroker, BackBroker)):
     '''Broker implementation for Oanda.
 
     This class maps the orders/positions from Oanda to the
