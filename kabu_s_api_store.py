@@ -60,6 +60,7 @@ class KabuSAPIStore(with_metaclass(MetaSingleton, object)):
         ('handler', None),
         ('headers', {}),
         ('token', None),
+        ('account_tmout', 15),
     )
 
     # _DTEPOCH = datetime(1970, 1, 1)
@@ -201,9 +202,10 @@ class KabuSAPIStore(with_metaclass(MetaSingleton, object)):
         q = queue.Queue()
         kwargs = {'q': q, 'tmout': tmout}
 
-        t = threading.Thread(target=self._streaming_listener, kwargs=kwargs)
-        t.daemon = True
-        t.start()
+        # FIXME
+        # t = threading.Thread(target=self._streaming_listener, kwargs=kwargs)
+        # t.daemon = True
+        # t.start()
 
         # t = threading.Thread(target=self._t_streaming_events, kwargs=kwargs) # FIXME: _t_streaming_events
         # t.daemon = True
