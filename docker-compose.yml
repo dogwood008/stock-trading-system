@@ -6,3 +6,21 @@ services:
       - .:/home/jovyan/work:delegated
     ports:
       - '8888:8888'
+
+  proxy:
+    image: caddy
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile
+    ports:
+      - '18081:18081'
+    depends_on:
+      - prism_1
+
+  prism_1:
+    image: stoplight/prism:4.2.2
+    #command: mock --host 0.0.0.0 kabu_STATION_API.yaml
+    #volumes:
+    #  - ./kabu_STATION_API.yaml:/kabu_STATION_API.yaml
+    command: >
+      mock -p 28888 --host 0.0.0.0
+      https://raw.githubusercontent.com/kabucom/kabusapi/master/reference/kabu_STATION_API.yaml

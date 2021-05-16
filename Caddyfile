@@ -1,0 +1,6 @@
+http://localhost
+
+route /kabusapi/* {
+	uri strip_prefix /kabusapi
+	reverse_proxy prism_1:28888
+}
