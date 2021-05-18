@@ -12,7 +12,7 @@ services:
     volumes:
       - ./Caddyfile:/etc/caddy/Caddyfile
     ports:
-      - '18081:18081'
+      - '18081:80'
     depends_on:
       - prism_1
 
