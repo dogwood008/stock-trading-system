@@ -46,6 +46,7 @@ class KabuSBroker(with_metaclass(MetaKabuSBroker, BackBroker)):
         ('use_positions', True),
         ('commission', KabuSCommInfo(mult=1.0, stocklike=False)),
         ('handler', None),
+        ('headers', {}),
     )
 
     def __init__(self, **kwargs):

@@ -216,6 +216,8 @@ def runstrategy(args={}):
 
     if not args.no_store:
         store = StoreCls(**storekwargs)
+        #HACK: prismに200の応答をさせるため
+        store.set_headers({ 'Prefer:': 'code=200' })
 
     if args.broker:
         if args.no_store:

@@ -91,8 +91,7 @@ class KabuSAPIStore(with_metaclass(MetaSingleton, object)):
             if not token:
                 token = kabusapi.Context(host, port, password).token
             self.kapi = kabusapi.Context(host, port, token=token)
-            for k, v in headers.items():
-                self.kapi._set_header(k, v)
+            self.set_headers(headers)
             self._logger.debug('_init_kabusapi_client() called')
             
         super(KabuSAPIStore, self).__init__()
@@ -560,6 +559,10 @@ class KabuSAPIStore(with_metaclass(MetaSingleton, object)):
                 self.broker._cancel(oref)
             else:  # default action ... if nothing else
                 self.broker._reject(oref)
+
+    def set_headers(self, headers: dict):
+        for k, v in headers.items():
+            self.kapi._set_header(k, v)
 
 
 # %%: Test
