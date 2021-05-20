@@ -72,6 +72,7 @@ class KabuSBroker(with_metaclass(MetaKabuSBroker, BackBroker)):
 
         if self.p.use_positions:
             for p in self.o.get_positions():
+                # FIXME: ここまでできている　続きは取得したlistから要素を分離させていく
                 print('position for instrument:', p['instrument'])
                 is_sell = p['side'] == 'sell'
                 size = p['units']

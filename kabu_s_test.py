@@ -210,14 +210,14 @@ def runstrategy(args={}):
         port=args.port,
         host=args.host,
         #headers=args.headers,
-        api_key=args.api_key,
+        token=args.api_key,
         postman_return_code=args.postman_return_code,
+        #HACK: prismに200の応答をさせるため
+        headers={ 'Prefer': 'code=200' },
     )
 
     if not args.no_store:
         store = StoreCls(**storekwargs)
-        #HACK: prismに200の応答をさせるため
-        store.set_headers({ 'Prefer:': 'code=200' })
 
     if args.broker:
         if args.no_store:
@@ -571,7 +571,7 @@ if __name__ == '__main__':
                 '--data0', 'japan-stock-prices_2021_9143.csv',
                 '--host', os.environ.get('KABU_S_HOST'),
                 '--port', os.environ.get('KABU_S_PORT'),
-                '--api_key', os.environ.get('POSTMAN_API_KEY'),
+                '--api_key', os.environ.get('KABU_S_API_KEY'),
                 '--postman_return_code', '200',
                 #'--fromdate', '2021-01-01',  # only for backcasting
                 #'--todate', '2021-05-31',  # only for backcasting
