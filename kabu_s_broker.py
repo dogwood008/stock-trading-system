@@ -72,14 +72,14 @@ class KabuSBroker(with_metaclass(MetaKabuSBroker, BackBroker)):
 
         if self.p.use_positions:
             for p in self.o.get_positions():
-                # FIXME: ここまでできている　続きは取得したlistから要素を分離させていく
-                print('position for instrument:', p['instrument'])
-                is_sell = p['side'] == 'sell'
-                size = p['units']
+                print('position for Symbol:', p['Symbol'])
+                is_sell: bool = p['Side'] == 1  # 1:売 / 2:買
+                size: float = p['HoldQty']  # 拘束数量（保有数量）
                 if is_sell:
                     size = -size
-                price = p['avgPrice']
-                self.positions[p['instrument']] = Position(size, price)
+                price: float = p['Price']  # 値段
+                self.positions[p['Symbol']] = Position(size, price)
+            self.p.logger.debug(self.positions)  # FIXME: loggerが無い
 
     def data_started(self, data):
         pos = self.getposition(data)
