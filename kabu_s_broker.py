@@ -28,6 +28,8 @@ import collections
 from backtrader.position import Position
 from backtrader.brokers import BackBroker
 
+from kabu_s_logger import KabuSLogger
+
 class KabuSBroker(with_metaclass(MetaKabuSBroker, BackBroker)):
     '''Broker implementation for Oanda.
 
@@ -47,6 +49,7 @@ class KabuSBroker(with_metaclass(MetaKabuSBroker, BackBroker)):
         ('commission', KabuSCommInfo(mult=1.0, stocklike=False)),
         ('handler', None),
         ('headers', {}),
+        ('logger', KabuSLogger(__name__)),
     )
 
     def __init__(self, **kwargs):
