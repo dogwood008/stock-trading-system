@@ -18,7 +18,7 @@ from meta_kabu_s_data import MetaKabuSData
 from kabu_s_logger import KabuSLogger
 from kabu_s_data import KabuSData
 
-class KabuSDataWithAdj(KabuSData): # FIXME
+class KabuSDataWithAdj(with_metaclass(MetaKabuSData, DataBase)): # FIXME
     def __init__(self, *args, **kwargs):
         if 'handler' in kwargs:
             logger = KabuSLogger(__class__.__name__, DEBUG)

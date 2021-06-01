@@ -34,3 +34,9 @@ conv-with-gen:
 		--dill-output=./rates_df.dill \
 		--year=2020 \
 		--codes=9143
+
+create-dill:
+	python add_adj_close.py \
+		--heigou-input=heigou.html \
+		--bunkatsu-input=bunkatsu.html \
+		--dill-output=rates_df.dill

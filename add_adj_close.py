@@ -74,7 +74,7 @@ class AddAdjClose:
         dfs['rate'] = dfs['rate'].apply(_convert_to_ratio)
         dfs['adj_rate'] = _adj_rates(dfs)
         dfs['adj_rate'] = dfs['adj_rate'].astype(np.float64)
-        dfs['date'] = dfs['from'].apply(cls.eight_digits_to_date)
+        dfs['date'] = dfs['from'].apply(cls.three_separated_digits_to_date)
         return _reverse(dfs)[['code', 'name', 'date', 'rate', 'adj_rate']]
 
     @classmethod
@@ -98,6 +98,14 @@ class AddAdjClose:
         return datetime(*ymd, 15, 0, 0, tzinfo=cls.JST)
 
     @classmethod
+    def three_separated_digits_to_date(cls, date_str: str) -> datetime:
+        '''
+        YYYY-MM-DD や YYYY/MM/DD や 'YYYY MM DD' のstrをパースして、datetimeで返す。
+        '''
+        ymd = map(lambda x: int(x), re.split('[-/ ]', date_str)[0:3])
+        return datetime(*ymd, 15, 0, 0, tzinfo=cls.JST)
+
+    @classmethod
     def hist_data(cls, filepath: str) -> pd.DataFrame:
         '''
         銘柄コード、年を指定して、CSVを読み込み、DFを返す。
@@ -105,11 +113,18 @@ class AddAdjClose:
         csv = pd.read_csv(filepath, encoding='shift_jis')
         columns = {'SC': 'code', '名称': 'name', \
                         '市場': 'market', '業種': 'industry', \
-                        '日付': 'date', '株価': 'close', '始値': 'open', \
-                        '高値': 'high', '安値': 'low', '出来高': 'volumes'}
+                        '日付': 'date', '日時': 'date', '株価': 'close', \
+                        '始値': 'open', '高値': 'high', '安値': 'low', \
+                        '出来高': 'volumes'}
         csv = csv.rename(columns=columns)
-        csv['date'] = csv['date'].apply(cls.eight_digits_to_date)
-        return csv.loc[:, columns.values()]
+        the_first_date: str = csv['date'][0]
+        if len(the_first_date) == 8:  # yyyymmdd
+            csv['date'] = csv['date'].apply(cls.eight_digits_to_date)
+        else:  # yyyy/mm/dd HH:MM and so on
+            csv['date'] = csv['date'].apply(cls.three_separated_digits_to_date)
+        filter_column: list = dict.fromkeys(columns.values())
+        return_val: pd.DataFrame = csv.filter(filter_column)  # filterして返す
+        return return_val
 
     @classmethod
     def _bizdays(cls, year: int) -> pd.DataFrame:
@@ -125,7 +140,8 @@ class AddAdjClose:
         '''
         銘柄コード、年、終値調整用比のDFから、調整後終値付きのDFを返す。
         '''
-        adj_rate_for_current_stock: pd.DataFrame = adj_rate_df[adj_rate_df['code'] == str(code)]
+        adj_rate_for_current_stock: pd.DataFrame = \
+            adj_rate_df[adj_rate_df['code'] == str(code)]
         joined = cls._bizdays(year).merge(adj_rate_for_current_stock, \
                                     on='date', how='left') \
                             .set_index('date').shift() \
@@ -139,32 +155,32 @@ class AddAdjClose:
         return hist
 
 
-def parse_args() -> argparse.Namespace:
+def parse_args(args: list=[]) -> argparse.Namespace:
     parser = argparse.ArgumentParser(
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
         description='KABU+ converter')
 
     parser.add_argument('--input', '-i', default=None, type=str,
-                        required=True, action='store',
+                        required=False, action='store',
                         help='input file path')
 
     parser.add_argument('--output', '-o', default=None, type=str,
-                        required=True, action='store',
+                        required=False, action='store',
                         help='output file path')
 
     parser.add_argument('--year', '-y', default=None, type=int,
-                        required=True, action='store',
+                        required=False, action='store',
                         help='the year of file path')
 
     parser.add_argument('--codes', '-c', default=None, type=str,
-                        required=True, action='store',
+                        required=False, action='store',
                         help='the stock codes of file (comma separated)')
 
-    parser.add_argument('--dill-input', default='./adj_rates.dill', type=str,
+    parser.add_argument('--dill-input', default=None, type=str,
                         required=False, action='store',
                         help='dill input file path')
 
-    parser.add_argument('--dill-output', default='./adj_rates.dill', type=str,
+    parser.add_argument('--dill-output', default=None, type=str,
                         required=False, action='store',
                         help='dill output file path')
 
@@ -176,24 +192,42 @@ def parse_args() -> argparse.Namespace:
                         required=False, action='store',
                         help='bunkatsu html input file path')
 
+    if args:
+        return parser.parse_args(args)
     return parser.parse_args()
 
-def main():
-    args = parse_args()
+def main(args=[]):
+    args = parse_args(args)
     if args.dill_input:
+        print('Use the existed dill')
         adj_rate_df = AddAdjClose.load_from_dill(args.dill_input)
     else:
+        print('Create a new dill')
         adj_rate_df = AddAdjClose.get_adj_rate(
             (args.heigou_input, args.bunkatsu_input))
     if args.dill_output:
         AddAdjClose.save_as_dill(adj_rate_df, args.dill_output)
 
-    year = args.year
-    codes = args.codes.split(',')
-    hist_data_df: pd.DataFrame = AddAdjClose.hist_data(args.input)
-    [AddAdjClose.hist_data_with_adj_close(
-        hist_data_df, code, year, adj_rate_df) \
-            .to_csv(args.output % code) for code in codes]
+    if args.input:
+        year = args.year
+        codes = args.codes.split(',')
+        hist_data_df: pd.DataFrame = AddAdjClose.hist_data(args.input)
+        [AddAdjClose.hist_data_with_adj_close(
+            hist_data_df, code, year, adj_rate_df) \
+                .to_csv(args.output % code) for code in codes]
 
 if __name__ == '__main__':
-    main()
+    if __debug__:
+        args = [
+            '--input', './japan-stock-prices_2020_9143.csv',
+            '--output', './japan-stock-prices_2020_%s_adj.csv',
+            '--heigou-input', './heigou.html',
+            '--bunkatsu-input', './bunkatsu.html',
+            '--dill-output', './rates_df.dill',
+            '--year', '2020',
+            '--codes', '9143',
+        ]
+        main(args)
+
+    else:
+        main()
