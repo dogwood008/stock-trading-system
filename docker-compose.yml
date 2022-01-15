@@ -21,6 +21,8 @@ services:
     #command: mock --host 0.0.0.0 kabu_STATION_API.yaml
     #volumes:
     #  - ./kabu_STATION_API.yaml:/kabu_STATION_API.yaml
+    ports:
+      - '28888:28888'
     command: >
       mock -p 28888 --host 0.0.0.0
       https://raw.githubusercontent.com/kabucom/kabusapi/master/reference/kabu_STATION_API.yaml

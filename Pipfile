@@ -7,7 +7,7 @@ name = "pypi"
 backtrader = {editable = true, ref = "master", git = "https://github.com/mementum/backtrader.git"}
 matplotlib = "*"
 backtrader-plotting = "*"
-kabusapi = {ref = "feature/add_setup.py", git = "https://github.com/dogwood008/python-kabusapi.git"}
+kabusapi = {editable = true, path = "./../python-kabusapi"}
 jupyter_contrib_nbextensions = "*"
 jupyter_nbextensions_configurator = "*"
 autopep8 = "*"

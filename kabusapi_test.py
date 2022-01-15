@@ -1,12 +1,33 @@
-import kabusapi
-import os
+# coding: utf-8
+
 import pprint
 pp = pprint.PrettyPrinter()
 
+import sys
+import os
+import pathlib
+path_to_kabusapi = '../python-kabusapi/src'
+sys.path.append(str(pathlib.Path(path_to_kabusapi).resolve()))
+
+import kabusapi
+from requests.auth import HTTPBasicAuth
+
 HOST = os.environ.get('KABU_S_HOST')
 PASSWORD = os.environ.get('KABU_S_PASSWORD')
-PORT = os.environ.get('KABU_S_API_PORT')
-api = kabusapi.Context(HOST, PORT, PASSWORD)
+PORT = os.environ.get('KABU_S_PORT')
+USE_TLS = os.environ.get('KABU_S_TLS') == 'true'
+BASIC_AUTH_USER = os.environ.get('BASIC_AUTH_USER')
+BASIC_AUTH_PW = os.environ.get('BASIC_AUTH_PW')
+
+if BASIC_AUTH_USER:
+  auth = HTTPBasicAuth(BASIC_AUTH_USER, BASIC_AUTH_PW)
+else:
+  auth = None
+
+api = kabusapi.Context(HOST, PORT, PASSWORD,
+  auth=auth,
+  tls=USE_TLS,
+)
 
 def register_stock():
   # 銘柄登録
@@ -17,9 +38,9 @@ def register_stock():
   }
   response = api.register(**data)
   pp.pprint(response)
-register_stock()
+#register_stock()
 
-exit()
+# exit()
 # ---
 
 print('----------------')
@@ -38,5 +59,3 @@ try:
   api.websocket.run()
 except KeyboardInterrupt:
   print('Close websocket')
-  api.websocket.loop.close()
-  #api.websocket.close()
