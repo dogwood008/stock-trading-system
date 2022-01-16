@@ -1,9 +1,12 @@
 version: '3.8'
 services:
   app:
-    build: .
+    build:
+      context: .
+      args:
+      - USER_UID=${USER_UID}
     volumes:
-      - .:/home/jovyan/work:delegated
+      - .:/home/python:delegated
     ports:
       - '8888:8888'
 
