@@ -5,8 +5,10 @@ services:
       context: .
       args:
       - USER_UID=${USER_UID}
+      - USER_GID=${USER_GID}
     volumes:
-      - .:/home/python:delegated
+      - .:/app:delegated
+    user: "${USER_UID}:${USER_GID}"
     ports:
       - '8888:8888'
 

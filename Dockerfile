@@ -4,12 +4,16 @@ FROM python:3.10.1-buster
 LABEL maintainer="dogwood008"
 ARG btrepodir=/opt/backtrader
 
-ENV WORKDIR /workspace
+ENV WORKDIR /app
 ENV TZ=Asia/Tokyo
-ENV USERNAME python
+ARG USERNAME=${USER_NAME:-python}
 ARG USER_UID
+ARG USER_GID=${USER_UID}
 
-RUN useradd --user-group --shell /bin/bash --create-home --uid ${USER_UID?USER_UID_IS_MISSING} ${USERNAME}
+RUN groupadd --gid ${USER_GID?} $USERNAME
+RUN useradd --shell /bin/bash --create-home \
+  --uid ${USER_UID?USER_UID_IS_MISSING} \
+  --gid $USER_GID ${USERNAME?}
 
 WORKDIR ${WORKDIR}
 COPY Pipfile ${WORKDIR}/Pipfile
