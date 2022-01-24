@@ -12,6 +12,8 @@ from backtrader import Order
 from backtrader_plotting import Bokeh
 from backtrader_plotting.schemes import Tradimo
 
+from .time_and_sales_deliver_store import TimeAndSalesDeliverStore
+
 # ログ用
 from logging import getLogger, StreamHandler, Formatter, DEBUG, INFO, WARN
 
@@ -86,13 +88,16 @@ if __name__ == '__main__':
     datapath = os.path.join(modpath, '/opt/backtrader/datas/orcl-1995-2014.txt')
 
     # Create a Data Feed
-    data = bt.feeds.YahooFinanceCSVData(
-        dataname=datapath,
-        # Do not pass values before this date
-        fromdate=datetime.datetime(2000, 1, 1),
-        # Do not pass values after this date
-        todate=datetime.datetime(2000, 12, 31),
-        reverse=False)
+    # data = bt.feeds.TimeAndSalesDeliverData(
+    #     dataname=datapath,
+    #     # Do not pass values before this date
+    #     fromdate=datetime.datetime(2000, 1, 1),
+    #     # Do not pass values after this date
+    #     todate=datetime.datetime(2000, 12, 31),
+    #     reverse=False)
+    options = {}  # FIXME: give some args
+    store = TimeAndSalesDeliverStore(options)
+    data = store.getdata(dataname='EUR.USD-CASH-IDEALPRO')
 
     # Add the Data Feed to Cerebro
     cerebro.adddata(data)
