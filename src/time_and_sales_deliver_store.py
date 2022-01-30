@@ -34,9 +34,33 @@ from requests.exceptions import ConnectTimeout, ConnectionError
 
 # from .binance_broker import BinanceBroker
 # from .binance_feed import BinanceData
+from .time_and_sales_deliver_broker import TimeAndSalesDeliverBroker
+from .time_and_sales_deliver_store import TimeAndSalesDeliverStore
+from .time_and_sales_deliver_feed import TimeAndSalesDeliverData
 
 
 class TimeAndSalesDeliverStore(object):
+    def __init__(self, host, port, retries=5):
+        self.host = host
+        self.port = port
+        self.retries = retries
+        self._broker = TimeAndSalesDeliverBroker()
+        self._data = None
+
+    def getbroker(self):
+        return self._broker
+
+    def getdata(self, start_date=None):
+        '''
+        FIXME
+        '''
+        if not self._data:
+            self._data = TimeAndSalesDeliverData(store=self, start_date=start_date)
+        return self._data
+
+
+    
+class BinanceStore(object):
     '''
     データを処理してcelebroに渡しやすくする。そのために必要な接続情報や、gg
     '''

@@ -24,6 +24,7 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
+from typing import TypeAlias, Tuple
 from collections import deque
 
 import pandas as pd
@@ -31,6 +32,23 @@ import pandas as pd
 from backtrader.dataseries import TimeFrame
 from backtrader.feed import DataBase
 from backtrader.utils import date2num
+
+State: TypeAlias = int
+
+class TimeAndSalesData(DataBase):
+    params = (
+        ('drop_newest', True),
+    )
+    _ST_LIVE: State = 0
+    _ST_HISTORBACK: State = 1
+    _ST_OVER: State = 2
+
+    def __init__(self, store, timeframe_in_minutes, start_date=None):
+        self.timeframe_in_minutes = timeframe_in_minutes
+        self.start_date = start_date
+
+        self._store = store
+        self._data = deque()
 
 
 class BinanceData(DataBase):

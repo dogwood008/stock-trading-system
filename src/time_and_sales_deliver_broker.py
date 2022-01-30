@@ -35,6 +35,9 @@ from backtrader.position import Position
 from binance.enums import *
 
 
+class TimeAndSalesDeliverBroker(OrderBase):
+    pass
+
 class BinanceOrder(OrderBase):
     def __init__(self, owner, data, exectype, binance_order):
         self.owner = owner
