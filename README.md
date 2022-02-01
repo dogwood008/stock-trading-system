@@ -5,3 +5,7 @@
 
 Use Emoji in Commit log:
 https://gitmoji.carloscuesta.me/
+
+
+# How to build or run
+まだ動かない。作っている最中。
