@@ -1,31 +1,29 @@
-FROM jupyter/scipy-notebook:42f4c82a07ff
+# syntax = docker/dockerfile:1.2
+
+FROM python:3.10.1-buster
 LABEL maintainer="dogwood008"
-ARG workdir=/home/jovyan/work
 ARG btrepodir=/opt/backtrader
-ARG tmpdir=/tmp
 
-EXPOSE 8888
-
+ENV WORKDIR /app
 ENV TZ=Asia/Tokyo
+ARG USERNAME=${USER_NAME:-python}
+ARG USER_UID
+ARG USER_GID=${USER_UID}
 
-USER root
-RUN git clone https://github.com/mementum/backtrader.git $btrepodir && \
-     chown -R jovyan $btrepodir
+RUN groupadd --gid ${USER_GID?} $USERNAME
+RUN useradd --shell /bin/bash --create-home \
+  --uid ${USER_UID?USER_UID_IS_MISSING} \
+  --gid $USER_GID ${USERNAME?}
 
-USER jovyan
+WORKDIR ${WORKDIR}
+COPY Pipfile ${WORKDIR}/Pipfile
+COPY Pipfile.lock ${WORKDIR}/Pipfile.lock
 
-WORKDIR $tmpdir
-COPY Pipfile $tmpdir
-COPY Pipfile.lock $tmpdir
-
-RUN pip install --upgrade pip && \
+RUN --mount=type=cache,target=/root/.cache \ 
+    pip install --upgrade pip && \
     pip install pipenv && \
-    pipenv install --system --ignore-pipfile --python=$(conda run which python) --site-packages
-WORKDIR $workdir
+    pipenv install --deploy --system --ignore-pipfile --python=$(which python) --site-packages
 
-# Run Jupyter
-CMD ["start-notebook.sh"]
-
-# When Run backtest
-# CMD ["pipenv", "run", "python", "main.py"]
+USER ${USERNAME}
+CMD ["/usr/bin/env", "python"]
 

@@ -4,13 +4,22 @@ verify_ssl = true
 name = "pypi"
 
 [packages]
-backtrader = {editable = true, ref = "patch-1", git = "https://github.com/Larry-u/backtrader.git"}
+backtrader = {editable = true, ref = "master", git = "https://github.com/mementum/backtrader.git"}
 matplotlib = "*"
 backtrader-plotting = "*"
+kabusapi = {editable = true, ref = "feature/add_close_websocket_feature", git = "https://github.com/dogwood008/python-kabusapi.git"}
+jupyter_contrib_nbextensions = "*"
+jupyter_nbextensions_configurator = "*"
+autopep8 = "*"
+jupyterlab-legos-ui = "*"
+jupyterthemes = "*"
+dill = "*"
+jpbizday = "*"
+beautifulsoup4 = "*"
 
 [dev-packages]
 jupyter = "*"
 jupyterthemes = "*"
 
 [requires]
-python_version = "3.8"
+python_version = "3.10"

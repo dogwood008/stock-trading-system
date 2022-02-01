@@ -1,0 +1,13 @@
+http://lvh.me {
+	route /kabusapi/* {
+		uri strip_prefix /kabusapi
+		reverse_proxy prism_1:28888
+	}
+}
+
+http://proxy {
+	route /kabusapi/* {
+		uri strip_prefix /kabusapi
+		reverse_proxy prism_1:28888
+	}
+}
