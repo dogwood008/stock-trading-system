@@ -12,7 +12,9 @@ from backtrader import Order
 from backtrader_plotting import Bokeh
 from backtrader_plotting.schemes import Tradimo
 
-from .time_and_sales_deliver_store import TimeAndSalesDeliverStore
+sys.path.append(os.path.join(os.path.dirname(__file__), '.'))
+#from time_and_sales_deliver_store import TimeAndSalesDeliverStore
+from time_and_sales_deliver_store import TimeAndSalesDeliverStore
 
 # ログ用
 from logging import getLogger, StreamHandler, Formatter, DEBUG, INFO, WARN
@@ -84,8 +86,8 @@ if __name__ == '__main__':
 
     # Datas are in a subfolder of the samples. Need to find where the script is
     # because it could have been called from anywhere
-    modpath = os.path.dirname(os.path.abspath(sys.argv[0]))
-    datapath = os.path.join(modpath, '/opt/backtrader/datas/orcl-1995-2014.txt')
+    # modpath = os.path.dirname(os.path.abspath(sys.argv[0]))
+    # datapath = os.path.join(modpath, '/opt/backtrader/datas/orcl-1995-2014.txt')
 
     # Create a Data Feed
     # data = bt.feeds.TimeAndSalesDeliverData(
@@ -95,8 +97,8 @@ if __name__ == '__main__':
     #     # Do not pass values after this date
     #     todate=datetime.datetime(2000, 12, 31),
     #     reverse=False)
-    options = {}  # FIXME: give some args
-    store = TimeAndSalesDeliverStore(options)
+    options = { 'host': None, 'port': None }  # FIXME: give some args
+    store = TimeAndSalesDeliverStore(**options)
     data = store.getdata(dataname='EUR.USD-CASH-IDEALPRO')
 
     # Add the Data Feed to Cerebro

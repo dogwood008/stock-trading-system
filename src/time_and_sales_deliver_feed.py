@@ -35,7 +35,7 @@ from backtrader.utils import date2num
 
 State: TypeAlias = int
 
-class TimeAndSalesData(DataBase):
+class TimeAndSalesDeliverData(DataBase):
     params = (
         ('drop_newest', True),
     )
