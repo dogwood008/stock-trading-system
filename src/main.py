@@ -97,9 +97,9 @@ if __name__ == '__main__':
     #     # Do not pass values after this date
     #     todate=datetime.datetime(2000, 12, 31),
     #     reverse=False)
-    options = { 'host': None, 'port': None }  # FIXME: give some args
+    options = { 'host': 'host_foo', 'port': 'port_bar' }  # FIXME: give some args
     store = TimeAndSalesDeliverStore(**options)
-    data = store.getdata(dataname='EUR.USD-CASH-IDEALPRO')
+    data = store.getdata()
 
     # Add the Data Feed to Cerebro
     cerebro.adddata(data)

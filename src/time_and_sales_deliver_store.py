@@ -36,7 +36,7 @@ from requests.exceptions import ConnectTimeout, ConnectionError
 # from .binance_feed import BinanceData
 import sys, os
 sys.path.append(os.path.join(os.path.dirname(__file__), '.'))
-from time_and_sales_deliver_broker import TimeAndSalesDeliverBroker
+from time_and_sales_deliver_broker import TimeAndSalesDeliverBroker, TimeAndSaledDeliverEnum
 from time_and_sales_deliver_feed import TimeAndSalesDeliverData
 
 
@@ -45,8 +45,7 @@ class TimeAndSalesDeliverStore(object):
         self.host = host
         self.port = port
         self.retries = retries
-        args = { 'owner': None, 'data': None, 'exectype': None, 'order': None } # FIXME
-        self._broker = TimeAndSalesDeliverBroker(**args)
+        self._broker = TimeAndSalesDeliverBroker(store=self)
         self._data = None
 
     def getbroker(self):

@@ -38,12 +38,25 @@ class TimeAndSaledDeliverEnum:
 
 
 
-class TimeAndSalesDeliverBroker(OrderBase):
+class TimeAndSalesDeliverOrder(OrderBase):
     def __init__(self, owner, data, exectype, order):
+        super(TimeAndSalesDeliverBroker, self).__init__()
         self.owner = owner
         self.data = data
         self.exectype = exectype
         self.ordtype = self.Buy if order['side'] == TimeAndSaledDeliverEnum.SIDE_BUY else self.Sell
+
+class TimeAndSalesDeliverBroker(BrokerBase):
+    def __init__(self, store):
+        super(TimeAndSalesDeliverBroker, self).__init__()
+
+        self.notifs = deque()
+        self.positions = defaultdict(Position)
+
+        self.open_orders = list()
+    
+        self._store = store
+        #self._store.binance_socket.start_user_socket(self._handle_user_socket_message)
 
 class BinanceOrder(OrderBase):
     def __init__(self, owner, data, exectype, binance_order):
