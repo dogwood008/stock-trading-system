@@ -36,6 +36,7 @@ from requests.exceptions import ConnectTimeout, ConnectionError
 # from .binance_feed import BinanceData
 import sys, os
 from datetime import datetime
+import urllib3
 
 sys.path.append(os.path.join(os.path.dirname(__file__), '.'))
 from time_and_sales_deliver_broker import TimeAndSalesDeliverBroker, TimeAndSaledDeliverEnum
@@ -50,11 +51,12 @@ class TimeAndSalesDeliverStore(object):
         self.retries = retries
         self._broker = TimeAndSalesDeliverBroker(store=self)
         self._data = None
+        self._http = urllib3.PoolManager()
 
     def getbroker(self):
         return self._broker
 
-    def getdata(self, start_date=None):
+    def getdata(self, stock_code: str, start_date=None):
         '''
         FIXME
         '''
@@ -62,11 +64,12 @@ class TimeAndSalesDeliverStore(object):
             self._data = TimeAndSalesDeliverData(store=self, start_date=start_date)
         return self._data
 
-    def get_historical_data(self):
+    def get_historical_data(self, stock_code: str, dt: datetime):
         '''
         http://lvh.me:4567/7974/2022-01-01T12:34:56 のようなフォーマットで取りに行く
         '''
-    
+        self._http.request('GET', self._endpoint_url, stock_code, dt)
+
     def _endpoint_url(self, stock_code: str, dt: datetime) -> str:
         format_dt = dt.strftime('%Y-%m-%dT%H:%M:%S')
         return f'{self.protocol}://{self.host}:{self.port}/{stock_code}/{format_dt}'
