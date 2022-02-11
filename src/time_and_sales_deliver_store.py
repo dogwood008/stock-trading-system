@@ -61,14 +61,18 @@ class TimeAndSalesDeliverStore(object):
         FIXME
         '''
         if not self._data:
-            self._data = TimeAndSalesDeliverData(store=self, start_date=start_date)
+            self._data = self.get_historical_data(stock_code, start_date)
+            #self._data = TimeAndSalesDeliverData(
+            #    store=self, start_date=start_date, stock_code=stock_code)
         return self._data
 
-    def get_historical_data(self, stock_code: str, dt: datetime):
+    def get_historical_data(self, stock_code: str, dt: datetime) -> str:
         '''
         http://lvh.me:4567/7974/2022-01-01T12:34:56 のようなフォーマットで取りに行く
         '''
-        self._http.request('GET', self._endpoint_url, stock_code, dt)
+        url: str = self._endpoint_url(stock_code, dt)
+        resp = self._http.request('GET', url)
+        return str(resp.data)
 
     def _endpoint_url(self, stock_code: str, dt: datetime) -> str:
         format_dt = dt.strftime('%Y-%m-%dT%H:%M:%S')

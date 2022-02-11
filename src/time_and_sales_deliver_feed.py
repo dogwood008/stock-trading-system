@@ -43,10 +43,9 @@ class TimeAndSalesDeliverData(DataBase):
     _ST_HISTORBACK: State = 1
     _ST_OVER: State = 2
 
-    def __init__(self, store, start_date=None):
+    def __init__(self, start_date=None):
         self.start_date = start_date
 
-        self._store = store
         self._data = deque()
 
     def start(self):
