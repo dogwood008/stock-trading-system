@@ -1,7 +1,7 @@
 # from __future__ import (absolute_import, division, print_function,
 #                        unicode_literals)
 
-import datetime  # For datetime objects
+from datetime import datetime  # For datetime objects
 import os.path  # To manage paths
 import sys  # To find out the script name (in argv[0])
 
@@ -97,9 +97,11 @@ if __name__ == '__main__':
     #     # Do not pass values after this date
     #     todate=datetime.datetime(2000, 12, 31),
     #     reverse=False)
+    stock_code: str = '7974'
     options = { 'host': 'host_foo', 'port': 'port_bar' }  # FIXME: give some args
     store = TimeAndSalesDeliverStore(**options)
-    data = store.getdata()
+    start_date = datetime.strptime('2022-01-01T12:34:56', "%Y-%m-%dT%H:%M:%S")
+    data = store.getdata(stock_code=stock_code, start_date=start_date)
 
     # Add the Data Feed to Cerebro
     cerebro.adddata(data)
