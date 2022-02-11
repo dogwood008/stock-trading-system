@@ -32,11 +32,31 @@ from math import copysign
 from backtrader.broker import BrokerBase
 from backtrader.order import Order, OrderBase
 from backtrader.position import Position
-from binance.enums import *
+
+class TimeAndSaledDeliverEnum:
+    SIDE_BUY = 'side_buy'
 
 
-class TimeAndSalesDeliverBroker(OrderBase):
-    pass
+
+class TimeAndSalesDeliverOrder(OrderBase):
+    def __init__(self, owner, data, exectype, order):
+        super(TimeAndSalesDeliverBroker, self).__init__()
+        self.owner = owner
+        self.data = data
+        self.exectype = exectype
+        self.ordtype = self.Buy if order['side'] == TimeAndSaledDeliverEnum.SIDE_BUY else self.Sell
+
+class TimeAndSalesDeliverBroker(BrokerBase):
+    def __init__(self, store):
+        super(TimeAndSalesDeliverBroker, self).__init__()
+
+        self.notifs = deque()
+        self.positions = defaultdict(Position)
+
+        self.open_orders = list()
+    
+        self._store = store
+        #self._store.binance_socket.start_user_socket(self._handle_user_socket_message)
 
 class BinanceOrder(OrderBase):
     def __init__(self, owner, data, exectype, binance_order):
@@ -59,6 +79,7 @@ class BinanceOrder(OrderBase):
 
 
 class BinanceBroker(BrokerBase):
+    ORDER_TYPE_LIMIT, ORDER_TYPE_MARKET, ORDER_TYPE_STOP_LOSS, ORDER_TYPE_STOP_LOSS_LIMIT = range(4)
     _ORDER_TYPES = {
         Order.Limit: ORDER_TYPE_LIMIT,
         Order.Market: ORDER_TYPE_MARKET,

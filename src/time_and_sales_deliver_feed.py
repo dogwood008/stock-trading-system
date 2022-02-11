@@ -35,7 +35,7 @@ from backtrader.utils import date2num
 
 State: TypeAlias = int
 
-class TimeAndSalesData(DataBase):
+class TimeAndSalesDeliverData(DataBase):
     params = (
         ('drop_newest', True),
     )
@@ -43,12 +43,32 @@ class TimeAndSalesData(DataBase):
     _ST_HISTORBACK: State = 1
     _ST_OVER: State = 2
 
-    def __init__(self, store, timeframe_in_minutes, start_date=None):
-        self.timeframe_in_minutes = timeframe_in_minutes
+    def __init__(self, store, start_date=None):
         self.start_date = start_date
 
         self._store = store
         self._data = deque()
+
+    def start(self):
+        DataBase.start(self)
+
+        if self.start_date:
+            self._state = self._ST_HISTORBACK
+            self.put_notification(self.DELAYED)
+
+            klines = self._store.get_historical_data(
+                self.start_date.strftime('%d %b %Y %H:%M:%S'))
+
+            if self.p.drop_newest:
+                klines.pop()
+            
+            df = pd.DataFrame(klines)
+            df.drop(df.columns[[6, 7, 8, 9, 10, 11]], axis=1, inplace=True)  # Remove unnecessary columns
+            df = self._parser_dataframe(df)
+            self._data.extend(df.values.tolist())            
+        else:
+            self._start_live()
+
 
 
 class BinanceData(DataBase):
