@@ -37,6 +37,8 @@ from requests.exceptions import ConnectTimeout, ConnectionError
 import sys, os
 from datetime import datetime
 import urllib3
+import json
+import pandas as pd
 
 sys.path.append(os.path.join(os.path.dirname(__file__), '.'))
 from time_and_sales_deliver_broker import TimeAndSalesDeliverBroker, TimeAndSaledDeliverEnum
@@ -56,28 +58,32 @@ class TimeAndSalesDeliverStore(object):
     def getbroker(self):
         return self._broker
 
-    def getdata(self, stock_code: str, start_date=None):
+    def getdata(self, stock_code: str, \
+            start_dt: datetime=None, end_dt: datetime=None):
         '''
         FIXME
         '''
+        caller = lambda x: self._dt_to_resp(stock_code, x)
         if not self._data:
-            self._data = self.get_historical_data(stock_code, start_date)
-            #self._data = TimeAndSalesDeliverData(
-            #    store=self, start_date=start_date, stock_code=stock_code)
+            dt_range = pd.date_range(start_dt, end_dt, freq='S')
+            self._data = list(map(caller, dt_range))
         return self._data
 
-    def get_historical_data(self, stock_code: str, dt: datetime) -> str:
+    def get_historical_data(self, stock_code: str, dt: datetime) -> dict:
         '''
         http://lvh.me:4567/7974/2022-01-01T12:34:56 のようなフォーマットで取りに行く
         '''
         url: str = self._endpoint_url(stock_code, dt)
         resp = self._http.request('GET', url)
-        return str(resp.data)
+        return json.loads(resp.data.decode('utf-8'))
 
     def _endpoint_url(self, stock_code: str, dt: datetime) -> str:
         format_dt = dt.strftime('%Y-%m-%dT%H:%M:%S')
         return f'{self.protocol}://{self.host}:{self.port}/{stock_code}/{format_dt}'
     
+    def _dt_to_resp(self, stock_code: str, dt: datetime) -> dict:
+        return self.get_historical_data(stock_code, dt)
+
 class BinanceStore(object):
     '''
     データを処理してcelebroに渡しやすくする。そのために必要な接続情報や、gg
