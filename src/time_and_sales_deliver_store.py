@@ -63,17 +63,18 @@ class TimeAndSalesDeliverStore(object):
         '''
         FIXME
         '''
-        caller = lambda x: self._dt_to_resp(stock_code, x)
+        caller = lambda x: self._dt_to_resp(stock_code, start_dt, end_dt) # FIXME: WIP
         if not self._data:
-            dt_range = pd.date_range(start_dt, end_dt, freq='S')
-            self._data = list(map(caller, dt_range))
+            dt_range = pd.date_range(start_dt, end_dt, freq='S') # FIXME: WIP
+            self._data = list(map(caller, dt_range)) # FIXME: WIP
         return self._data
 
-    def get_historical_data(self, stock_code: str, dt: datetime) -> dict:
+    def get_historical_data(self, stock_code: str,
+            from_dt: datetime, to_dt: datetime) -> dict:
         '''
         http://lvh.me:4567/7974/2022-01-01T12:34:56 のようなフォーマットで取りに行く
         '''
-        url: str = self._endpoint_url(stock_code, dt)
+        url: str = self._endpoint_url(stock_code, from_dt, to_dt)
         resp = self._http.request('GET', url)
         return json.loads(resp.data.decode('utf-8'))
 
@@ -81,8 +82,9 @@ class TimeAndSalesDeliverStore(object):
         format_dt = dt.strftime('%Y-%m-%dT%H:%M:%S')
         return f'{self.protocol}://{self.host}:{self.port}/{stock_code}/{format_dt}'
     
-    def _dt_to_resp(self, stock_code: str, dt: datetime) -> dict:
-        return self.get_historical_data(stock_code, dt)
+    def _dt_to_resp(self, stock_code: str,
+            from_dt: datetime, to_dt: datetime) -> dict:
+        return self.get_historical_data(stock_code, from_dt, to_dt)
 
 class BinanceStore(object):
     '''
