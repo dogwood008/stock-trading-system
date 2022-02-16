@@ -98,10 +98,11 @@ if __name__ == '__main__':
     #     todate=datetime.datetime(2000, 12, 31),
     #     reverse=False)
     stock_code: str = '7974'
-    options = { 'host': 'host_foo', 'port': 'port_bar' }  # FIXME: give some args
+    options = { 'protocol': 'http', 'host': 'localhost', 'port': '4567' }  # FIXME: give some args
     store = TimeAndSalesDeliverStore(**options)
-    start_date = datetime.strptime('2022-01-01T12:34:56', "%Y-%m-%dT%H:%M:%S")
-    data = store.getdata(stock_code=stock_code, start_date=start_date)
+    start_dt = datetime.strptime('2022-01-01T12:34:56', "%Y-%m-%dT%H:%M:%S")
+    end_dt = datetime.strptime('2022-01-02T12:34:56', "%Y-%m-%dT%H:%M:%S")
+    data = store.getdata(stock_code=stock_code, start_dt=start_dt, end_dt=end_dt)
 
     # Add the Data Feed to Cerebro
     cerebro.adddata(data)
