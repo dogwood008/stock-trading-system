@@ -100,8 +100,8 @@ if __name__ == '__main__':
     stock_code: str = '7974'
     options = { 'protocol': 'http', 'host': 'localhost', 'port': '4567' }  # FIXME: give some args
     store = TimeAndSalesDeliverStore(**options)
-    start_dt = datetime.strptime('2022-01-01T12:34:56', "%Y-%m-%dT%H:%M:%S")
-    end_dt = datetime.strptime('2022-01-02T12:34:56', "%Y-%m-%dT%H:%M:%S")
+    start_dt = datetime.strptime('2021-11-01T12:34:56', "%Y-%m-%dT%H:%M:%S")
+    end_dt = datetime.strptime('2021-11-02T12:34:56', "%Y-%m-%dT%H:%M:%S")
     data = store.getdata(stock_code=stock_code, start_dt=start_dt, end_dt=end_dt)
 
     # Add the Data Feed to Cerebro
