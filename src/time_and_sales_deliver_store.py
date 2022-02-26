@@ -58,36 +58,35 @@ class TimeAndSalesDeliverStore(object):
         self.protocol = protocol
         self.retries = retries
         self._broker = TimeAndSalesDeliverBroker(store=self)
-        self._data = None
+        self._data: HistData = None
         self._http = urllib3.PoolManager()
 
     def getbroker(self):
         return self._broker
 
     def getdata(self, stock_code: str, \
-            start_dt: datetime=None, end_dt: datetime=None):
+            start_dt: datetime=None, end_dt: datetime=None) -> TimeAndSalesDeliverData:
         '''
         FIXME
         '''
         if not self._data:
-            hist: HistData = self.get_historical_data(stock_code, start_dt, end_dt)
-            import pdb; pdb.set_trace()
-            self._data = hist
+            self._data = self.get_historical_data(stock_code, start_dt, end_dt)
         return self._data
 
     def get_historical_data(self, stock_code: str,
-            from_dt: datetime, to_dt: datetime) -> dict:
+            from_dt: datetime, to_dt: datetime) -> TimeAndSalesDeliverData:
         '''
         http://lvh.me:4567/7974/2022-01-01T12:34:56 のようなフォーマットで取りに行く
         '''
         url: str = self._endpoint_url_range(stock_code, from_dt, to_dt)
         resp = self._http.request('GET', url)
-        data = json.loads(resp.data.decode('utf-8'))
-        return self._parse_hist_data(data)
+        data: RawHistData = json.loads(resp.data.decode('utf-8'))
+        hist_data: HistData = self._parse_hist_data(data)
+        return TimeAndSalesDeliverData(start_date=from_dt, data=hist_data)
 
     def _parse_hist_data(self, hist_data: RawHistData) -> HistData:
-        parser = lambda x: [datetime.strptime(x[0], '%Y-%m-%d %H:%M:%S.%f'), float(x[2])]
-        return map(parser, hist_data)
+        parser = lambda x: [datetime.strptime(x[0], '%Y-%m-%d %H:%M:%S %z'), float(x[2])]
+        return list(map(parser, hist_data))
 
 
     def _endpoint_url_range(self, stock_code: str, from_dt: datetime, to_dt: datetime) -> str:

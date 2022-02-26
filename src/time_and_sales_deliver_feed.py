@@ -24,16 +24,19 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
-from typing import TypeAlias, Tuple
+from operator import index
+from typing import NewType, TypeAlias, Tuple
 from collections import deque
 
 import pandas as pd
+from datetime import datetime
 
 from backtrader.dataseries import TimeFrame
 from backtrader.feed import DataBase
 from backtrader.utils import date2num
 
 State: TypeAlias = int
+HistData: NewType = NewType('HistData', list[list[datetime, float]])
 
 class TimeAndSalesDeliverData(DataBase):
     params = (
@@ -43,10 +46,11 @@ class TimeAndSalesDeliverData(DataBase):
     _ST_HISTORBACK: State = 1
     _ST_OVER: State = 2
 
-    def __init__(self, start_date=None):
+    def __init__(self, start_date=None, data: HistData=None):
         self.start_date = start_date
-
         self._data = deque()
+        if data:
+            self._hist_data = data
 
     def start(self):
         DataBase.start(self)
@@ -55,13 +59,11 @@ class TimeAndSalesDeliverData(DataBase):
             self._state = self._ST_HISTORBACK
             self.put_notification(self.DELAYED)
 
-            klines = self._store.get_historical_data(
-                self.start_date.strftime('%d %b %Y %H:%M:%S'))
+            df = pd.DataFrame(self._hist_data,
+                    columns=['datetime', 'price'])
 
-            if self.p.drop_newest:
-                klines.pop()
+            import pdb; pdb.set_trace()
             
-            df = pd.DataFrame(klines)
             df.drop(df.columns[[6, 7, 8, 9, 10, 11]], axis=1, inplace=True)  # Remove unnecessary columns
             df = self._parser_dataframe(df)
             self._data.extend(df.values.tolist())            
