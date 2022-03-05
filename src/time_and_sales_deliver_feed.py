@@ -61,14 +61,20 @@ class TimeAndSalesDeliverData(DataBase):
 
             df = pd.DataFrame(self._hist_data,
                     columns=['datetime', 'price'])
-
-            import pdb; pdb.set_trace()
-            
-            df.drop(df.columns[[6, 7, 8, 9, 10, 11]], axis=1, inplace=True)  # Remove unnecessary columns
-            df = self._parser_dataframe(df)
+            df.index = df.datetime
             self._data.extend(df.values.tolist())            
         else:
             self._start_live()
+
+    def _load(self):
+        line = self._data.pop()
+        dt, price = line
+        self.lines.datetime[0] = int(dt.strftime("%Y%m%d%H%M%S"))
+        self.lines.open[0] = price
+        self.lines.high[0] = price
+        self.lines.low[0] = price
+        self.lines.close[0] = price
+        self.lines.volume[0] = 100 # FIXME
 
 
 
