@@ -5,6 +5,8 @@ from datetime import datetime  # For datetime objects
 import os.path  # To manage paths
 import sys  # To find out the script name (in argv[0])
 
+import pytz
+
 # Import the backtrader platform
 import backtrader as bt
 from backtrader import Order
@@ -27,7 +29,11 @@ class TestStrategyWithLogger(bt.Strategy):
     )
     def _log(self, txt, loglevel=INFO, dt=None):
         ''' Logging function for this strategy '''
-        dt = dt or self.datas[0].datetime.date(0)
+        # self.datas[0].datetime.datetime() は、
+        # 内部的に linebuffer.datetime() を呼び出す
+        # https://github.com/mementum/backtrader/blob/e2674b1690f6366e08646d8cfd44af7bb71b3970/backtrader/linebuffer.py#L386-L388
+        dt = dt or self.datas[0].datetime.datetime(
+            ago=0, tz=pytz.timezone("Asia/Tokyo"))
         self._logger.log(loglevel, '%s, %s' % (dt.isoformat(), txt))
 
     def _debug(self, txt, dt=None):
@@ -100,8 +106,8 @@ if __name__ == '__main__':
     stock_code: str = '7974'
     options = { 'protocol': 'http', 'host': 'localhost', 'port': '4567' }  # FIXME: give some args
     store = TimeAndSalesDeliverStore(**options)
-    start_dt = datetime.strptime('2022-01-01T12:34:56', "%Y-%m-%dT%H:%M:%S")
-    end_dt = datetime.strptime('2022-01-02T12:34:56', "%Y-%m-%dT%H:%M:%S")
+    start_dt = datetime.strptime('2021-11-01T12:34:56', "%Y-%m-%dT%H:%M:%S")
+    end_dt = datetime.strptime('2021-11-02T12:34:56', "%Y-%m-%dT%H:%M:%S")
     data = store.getdata(stock_code=stock_code, start_dt=start_dt, end_dt=end_dt)
 
     # Add the Data Feed to Cerebro

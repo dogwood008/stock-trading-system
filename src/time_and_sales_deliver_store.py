@@ -24,18 +24,21 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
+from typing import NewType
+
 import time
 
 from functools import wraps
 from math import floor
 
 from backtrader.dataseries import TimeFrame
+from backtrader import Position
 from requests.exceptions import ConnectTimeout, ConnectionError
 
 # from .binance_broker import BinanceBroker
 # from .binance_feed import BinanceData
 import sys, os
-from datetime import datetime
+from datetime import date, datetime
 import urllib3
 import json
 import pandas as pd
@@ -44,6 +47,9 @@ sys.path.append(os.path.join(os.path.dirname(__file__), '.'))
 from time_and_sales_deliver_broker import TimeAndSalesDeliverBroker, TimeAndSaledDeliverEnum
 from time_and_sales_deliver_feed import TimeAndSalesDeliverData
 
+RawHistData = NewType('HistData', list[list[str, str, str]])
+HistData = NewType('HistData', list[list[datetime, float]])
+Positions = NewType('Positions', list[datetime, Position])
 
 class TimeAndSalesDeliverStore(object):
     def __init__(self, host: str, port: int=80, protocol='http', retries=5):
@@ -52,37 +58,45 @@ class TimeAndSalesDeliverStore(object):
         self.protocol = protocol
         self.retries = retries
         self._broker = TimeAndSalesDeliverBroker(store=self)
-        self._data = None
+        self._data: HistData = None
         self._http = urllib3.PoolManager()
 
     def getbroker(self):
         return self._broker
 
     def getdata(self, stock_code: str, \
-            start_dt: datetime=None, end_dt: datetime=None):
+            start_dt: datetime=None, end_dt: datetime=None) -> TimeAndSalesDeliverData:
         '''
         FIXME
         '''
-        caller = lambda x: self._dt_to_resp(stock_code, x)
         if not self._data:
-            dt_range = pd.date_range(start_dt, end_dt, freq='S')
-            self._data = list(map(caller, dt_range))
+            self._data = self.get_historical_data(stock_code, start_dt, end_dt)
         return self._data
 
-    def get_historical_data(self, stock_code: str, dt: datetime) -> dict:
+    def get_historical_data(self, stock_code: str,
+            from_dt: datetime, to_dt: datetime) -> TimeAndSalesDeliverData:
         '''
         http://lvh.me:4567/7974/2022-01-01T12:34:56 のようなフォーマットで取りに行く
         '''
-        url: str = self._endpoint_url(stock_code, dt)
+        url: str = self._endpoint_url_range(stock_code, from_dt, to_dt)
         resp = self._http.request('GET', url)
-        return json.loads(resp.data.decode('utf-8'))
+        data: RawHistData = json.loads(resp.data.decode('utf-8'))
+        hist_data: HistData = self._parse_hist_data(data)
+        return TimeAndSalesDeliverData(start_date=from_dt, data=hist_data)
 
-    def _endpoint_url(self, stock_code: str, dt: datetime) -> str:
-        format_dt = dt.strftime('%Y-%m-%dT%H:%M:%S')
-        return f'{self.protocol}://{self.host}:{self.port}/{stock_code}/{format_dt}'
-    
-    def _dt_to_resp(self, stock_code: str, dt: datetime) -> dict:
-        return self.get_historical_data(stock_code, dt)
+    def _parse_hist_data(self, hist_data: RawHistData) -> HistData:
+        parser = lambda x: [datetime.strptime(x[0], '%Y-%m-%d %H:%M:%S %z'), float(x[2])]
+        return list(map(parser, hist_data))
+
+
+    def _endpoint_url_range(self, stock_code: str, from_dt: datetime, to_dt: datetime) -> str:
+        from_str = from_dt.strftime('%Y-%m-%dT%H:%M:%S')
+        to_str = to_dt.strftime('%Y-%m-%dT%H:%M:%S')
+        return f'{self.protocol}://{self.host}:{self.port}/{stock_code}/{from_dt}/{to_dt}'
+
+    def _dt_to_resp(self, stock_code: str,
+            from_dt: datetime, to_dt: datetime) -> dict:
+        return self.get_historical_data(stock_code, from_dt, to_dt)
 
 class BinanceStore(object):
     '''

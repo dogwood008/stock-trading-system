@@ -24,16 +24,19 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
-from typing import TypeAlias, Tuple
+from operator import index
+from typing import NewType, TypeAlias, Tuple
 from collections import deque
 
 import pandas as pd
+from datetime import datetime
 
 from backtrader.dataseries import TimeFrame
 from backtrader.feed import DataBase
 from backtrader.utils import date2num
 
 State: TypeAlias = int
+HistData: NewType = NewType('HistData', list[list[datetime, float]])
 
 class TimeAndSalesDeliverData(DataBase):
     params = (
@@ -43,10 +46,11 @@ class TimeAndSalesDeliverData(DataBase):
     _ST_HISTORBACK: State = 1
     _ST_OVER: State = 2
 
-    def __init__(self, start_date=None):
+    def __init__(self, start_date=None, data: HistData=None):
         self.start_date = start_date
-
         self._data = deque()
+        if data:
+            self._hist_data = data
 
     def start(self):
         DataBase.start(self)
@@ -55,18 +59,29 @@ class TimeAndSalesDeliverData(DataBase):
             self._state = self._ST_HISTORBACK
             self.put_notification(self.DELAYED)
 
-            klines = self._store.get_historical_data(
-                self.start_date.strftime('%d %b %Y %H:%M:%S'))
-
-            if self.p.drop_newest:
-                klines.pop()
-            
-            df = pd.DataFrame(klines)
-            df.drop(df.columns[[6, 7, 8, 9, 10, 11]], axis=1, inplace=True)  # Remove unnecessary columns
-            df = self._parser_dataframe(df)
+            df = pd.DataFrame(self._hist_data,
+                    columns=['datetime', 'price'])
+            df.index = df.datetime
             self._data.extend(df.values.tolist())            
         else:
             self._start_live()
+
+    def _load(self):
+        try:
+            line = self._data.popleft()
+        except IndexError:
+            return None
+        dt, price = line
+        # date2num: https://github.com/mementum/backtrader/blob/0fa63ef4a35dc53cc7320813f8b15480c8f85517/backtrader/utils/dateintern.py#L202
+        # main.py 中のロガーから、linebuffer.datetime()が呼ばれるので、floatの日時表示にする必要がある。
+        # datetime: https://github.com/mementum/backtrader/blob/e2674b1690f6366e08646d8cfd44af7bb71b3970/backtrader/linebuffer.py#L386-L388
+        self.lines.datetime[0] = date2num(dt)
+        self.lines.open[0] = price
+        self.lines.high[0] = price
+        self.lines.low[0] = price
+        self.lines.close[0] = price
+        self.lines.volume[0] = 100 # FIXME
+        return True
 
 
 
