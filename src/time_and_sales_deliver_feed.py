@@ -67,14 +67,21 @@ class TimeAndSalesDeliverData(DataBase):
             self._start_live()
 
     def _load(self):
-        line = self._data.pop()
+        try:
+            line = self._data.popleft()
+        except IndexError:
+            return None
         dt, price = line
-        self.lines.datetime[0] = int(dt.strftime("%Y%m%d%H%M%S"))
+        # date2num: https://github.com/mementum/backtrader/blob/0fa63ef4a35dc53cc7320813f8b15480c8f85517/backtrader/utils/dateintern.py#L202
+        # main.py 中のロガーから、linebuffer.datetime()が呼ばれるので、floatの日時表示にする必要がある。
+        # datetime: https://github.com/mementum/backtrader/blob/e2674b1690f6366e08646d8cfd44af7bb71b3970/backtrader/linebuffer.py#L386-L388
+        self.lines.datetime[0] = date2num(dt)
         self.lines.open[0] = price
         self.lines.high[0] = price
         self.lines.low[0] = price
         self.lines.close[0] = price
         self.lines.volume[0] = 100 # FIXME
+        return True
 
 
 
