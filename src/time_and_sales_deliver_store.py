@@ -82,7 +82,7 @@ class TimeAndSalesDeliverStore(object):
         resp = self._http.request('GET', url)
         data: RawHistData = json.loads(resp.data.decode('utf-8'))
         hist_data: HistData = self._parse_hist_data(data)
-        return TimeAndSalesDeliverData(start_date=from_dt, data=hist_data)
+        return TimeAndSalesDeliverData(start_date=from_dt, data=hist_data, dataname='TimeAndSalesDeliverData')
 
     def _parse_hist_data(self, hist_data: RawHistData) -> HistData:
         parser = lambda x: [datetime.strptime(x[0], '%Y-%m-%d %H:%M:%S %z'), float(x[2])]
