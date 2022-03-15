@@ -48,7 +48,7 @@ from time_and_sales_deliver_broker import TimeAndSalesDeliverBroker, TimeAndSale
 from time_and_sales_deliver_feed import TimeAndSalesDeliverData
 
 RawHistData = NewType('HistData', list[list[str, str, str]])
-HistData = NewType('HistData', list[list[datetime, float]])
+HistData = NewType('HistData', list[list[datetime, float, float]]) # [datetime, price, volume]
 Positions = NewType('Positions', list[datetime, Position])
 
 class TimeAndSalesDeliverStore(object):
@@ -85,7 +85,8 @@ class TimeAndSalesDeliverStore(object):
         return TimeAndSalesDeliverData(start_date=from_dt, data=hist_data, dataname='TimeAndSalesDeliverData')
 
     def _parse_hist_data(self, hist_data: RawHistData) -> HistData:
-        parser = lambda x: [datetime.strptime(x[0], '%Y-%m-%d %H:%M:%S %z'), float(x[2])]
+        # [datetime, price, volume]
+        parser = lambda x: [datetime.strptime(x[0], '%Y-%m-%d %H:%M:%S %z'), float(x[2]), float(x[1])]
         return list(map(parser, hist_data))
 
 
