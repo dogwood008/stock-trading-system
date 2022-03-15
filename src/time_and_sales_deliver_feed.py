@@ -60,7 +60,7 @@ class TimeAndSalesDeliverData(DataBase):
             self.put_notification(self.DELAYED)
 
             df = pd.DataFrame(self._hist_data,
-                    columns=['datetime', 'price'])
+                    columns=['datetime', 'price', 'volume'])
             df.index = df.datetime
             self._data.extend(df.values.tolist())            
         else:
@@ -71,7 +71,7 @@ class TimeAndSalesDeliverData(DataBase):
             line = self._data.popleft()
         except IndexError:
             return None
-        dt, price = line
+        dt, price, volume = line
         # date2num: https://github.com/mementum/backtrader/blob/0fa63ef4a35dc53cc7320813f8b15480c8f85517/backtrader/utils/dateintern.py#L202
         # main.py 中のロガーから、linebuffer.datetime()が呼ばれるので、floatの日時表示にする必要がある。
         # datetime: https://github.com/mementum/backtrader/blob/e2674b1690f6366e08646d8cfd44af7bb71b3970/backtrader/linebuffer.py#L386-L388
@@ -80,7 +80,7 @@ class TimeAndSalesDeliverData(DataBase):
         self.lines.high[0] = price
         self.lines.low[0] = price
         self.lines.close[0] = price
-        self.lines.volume[0] = 100 # FIXME
+        self.lines.volume[0] = volume
         return True
 
 
