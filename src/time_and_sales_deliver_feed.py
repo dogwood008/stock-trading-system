@@ -30,6 +30,7 @@ from collections import deque
 
 import pandas as pd
 from datetime import datetime
+import pytz
 
 from backtrader.dataseries import TimeFrame
 from backtrader.feed import DataBase
@@ -41,6 +42,8 @@ HistData: NewType = NewType('HistData', list[list[datetime, float]])
 class TimeAndSalesDeliverData(DataBase):
     params = (
         ('drop_newest', True),
+        ('timeframe', TimeFrame.Ticks),
+        ('tz', pytz.timezone('Asia/Tokyo')),
     )
     _ST_LIVE: State = 0
     _ST_HISTORBACK: State = 1
