@@ -31,20 +31,8 @@ class BasicStrategy(bt.Strategy):
 
     def __init__(self, loglevel=DEBUG):
         # Keep a reference to the "close" line in the data[0] dataseries
-        formatter = Formatter('[%(levelname)s] %(message)s')
         self._dataclose = self.datas[0].close
-        self._logger = getLogger(__name__)
-        self.handler = StreamHandler()
-        self.handler.setLevel(loglevel)
-        self.handler.setFormatter(formatter)
-        self.fhandler = FileHandler(
-            self.p.log_name, mode=self.p.log_mode, encoding='utf-8')
-        self.fhandler.setLevel(loglevel)
-        self.fhandler.setFormatter(formatter)
-        self._logger.setLevel(DEBUG)
-        self._logger.addHandler(self.handler)
-        self._logger.addHandler(self.fhandler)
-        self._logger.propagate = False
+        self._setup_logger(loglevel)
         self.sma = bt.indicators.SimpleMovingAverage(
             self.datas[0], period=self.params.smaperiod)
 
@@ -93,6 +81,10 @@ class BasicStrategy(bt.Strategy):
             self._info('Order: [sell] %.2f * %d' % (price, size))
             self.sell(size=size, price=price, valid=Order.DAY)
 
+    def stop(self):
+        '''終了時にはファイルをクローズする。Backtraderから呼ばれる。'''
+        self.fhandler.close()
+
     def _is_falling_over_5_ticks(self) -> bool:
         '''
         Returns
@@ -103,6 +95,11 @@ class BasicStrategy(bt.Strategy):
            self._dataclose[-2] < self._dataclose[-3] < self._dataclose[-4]
 
     def _buy_sell_in_str(self, order: Order) -> str:
+        '''
+        Returns
+        ---------------
+        与えた order が 'buy' or 'sell' を返す。
+        '''
         if order.isbuy():
             return 'buy'
         elif order.issell():
@@ -110,6 +107,17 @@ class BasicStrategy(bt.Strategy):
         else:
             raise 'Unknown type'
 
-    def stop(self):
-        '''終了時にはファイルをクローズする。Backtraderから呼ばれる。'''
-        self.fhandler.close()
+    def _setup_logger(self, loglevel):
+        formatter = Formatter('[%(levelname)s] %(message)s')
+        self._logger = getLogger(__name__)
+        self.handler = StreamHandler()
+        self.handler.setLevel(loglevel)
+        self.handler.setFormatter(formatter)
+        self.fhandler = FileHandler(
+            self.p.log_name, mode=self.p.log_mode, encoding='utf-8')
+        self.fhandler.setLevel(loglevel)
+        self.fhandler.setFormatter(formatter)
+        self._logger.setLevel(DEBUG)
+        self._logger.addHandler(self.handler)
+        self._logger.addHandler(self.fhandler)
+        self._logger.propagate = False
