@@ -12,6 +12,7 @@ class BasicStrategy(bt.Strategy):
         ('size', 100),
         ('smaperiod', 5),
         ('log_name', 'basic_strategy.log'),
+        ('log_mode', 'w'),
     )
     def _log(self, txt, loglevel=INFO, dt=None):
         ''' Logging function for this strategy '''
@@ -36,7 +37,8 @@ class BasicStrategy(bt.Strategy):
         self.handler = StreamHandler()
         self.handler.setLevel(loglevel)
         self.handler.setFormatter(formatter)
-        self.fhandler = FileHandler(self.p.log_name, encoding='utf-8')
+        self.fhandler = FileHandler(
+            self.p.log_name, mode=self.p.log_mode, encoding='utf-8')
         self.fhandler.setLevel(loglevel)
         self.fhandler.setFormatter(formatter)
         self._logger.setLevel(DEBUG)
@@ -49,7 +51,7 @@ class BasicStrategy(bt.Strategy):
 
     def notify_order(self, order: Order) -> None:
         '''
-        backtraderから呼ばれる
+        Backtraderから呼ばれる
         - Submitted: sent to the broker and awaiting confirmation
         - Accepted: accepted by the broker
         - Partial: partially executed
@@ -61,23 +63,23 @@ class BasicStrategy(bt.Strategy):
         '''
         # https://www.backtrader.com/docu/order/#:~:text=of%20an%20order-,Order%20Status%20values,-The%20following%20are
         if order.status == Order.Accepted:
-            self._info('Accepted: [%s] %.2f * %d' % 
+            # Brokerが注文受領
+            self._debug('Accepted: [%s] %.2f * %d' %
                 (self._buy_sell_in_str(order),
                  order.price or 0, order.size or 0))
         elif order.status == Order.Completed:
             # 注文が通った
             executed = order.executed
-            self._info('Completed [%s]: %.2f * %d' % 
+            self._info('Completed: [%s]: %.2f * %d' %
                 (self._buy_sell_in_str(order),
                  executed.price, executed.size))
         elif order.status in \
             (Order.Canceled, Order.Expired, Order.Margin, Order.Rejected):
             # 注文が通らなかった
-            import pdb; pdb.set_trace()
+            import pdb; pdb.set_trace()  # FIXME: WIP
 
     def next(self):
         self.p.tick_counter += 1
-        # Simply log the closing price of the series from the reference
         # 今カーソルがある日時のtickにおける売買成立値
         self._debug('[%6d] [Close] = %.2f' %
             (self.p.tick_counter, self._dataclose[0]))
@@ -85,14 +87,18 @@ class BasicStrategy(bt.Strategy):
         # もし5本連続で下がっているなら
         if self.p.tick_counter >= 5 and \
            self._is_falling_over_5_ticks():
-            # 1ティック前の値で売りオーダー（当日限り有効）
+            # 1ティック前の値で売り注文（当日限り有効）
             price = self._dataclose[-1]
             size = self.p.size
             self._info('Order: [sell] %.2f * %d' % (price, size))
             self.sell(size=size, price=price, valid=Order.DAY)
 
-    def _is_falling_over_5_ticks(self):
-        '''もし5本連続で下がっているならTrue'''
+    def _is_falling_over_5_ticks(self) -> bool:
+        '''
+        Returns
+        --------------- 
+            もし5本連続で下がっているならTrue
+        '''
         return self._dataclose[0] < self._dataclose[-1] < \
            self._dataclose[-2] < self._dataclose[-3] < self._dataclose[-4]
 
@@ -105,4 +111,5 @@ class BasicStrategy(bt.Strategy):
             raise 'Unknown type'
 
     def stop(self):
+        '''終了時にはファイルをクローズする。Backtraderから呼ばれる。'''
         self.fhandler.close()
