@@ -1,10 +1,11 @@
 import backtrader as bt
-from backtrader import Order
+from backtrader import Order, OrderBase
 
 import pytz
 
 from logging import getLogger, StreamHandler, FileHandler, \
      Formatter, DEBUG, INFO, WARN
+
 
 class BasicStrategy(bt.Strategy):
     params = (
@@ -63,6 +64,9 @@ class BasicStrategy(bt.Strategy):
                  executed.price, executed.size))
         elif order.status in \
             (Order.Canceled, Order.Expired, Order.Margin, Order.Rejected):
+            self._debug('Completed: [%s]: %.2f * %d' %
+                (self._buy_sell_in_str(order),
+                 executed.price, executed.size))
             # 注文が通らなかった
             import pdb; pdb.set_trace()  # FIXME: WIP
 
@@ -100,12 +104,22 @@ class BasicStrategy(bt.Strategy):
         ---------------
         与えた order が 'buy' or 'sell' を返す。
         '''
-        if order.isbuy():
-            return 'buy'
-        elif order.issell():
-            return 'sell'
-        else:
-            raise 'Unknown type'
+        return OrderBase.OrdTypes[order.ordtype]
+
+        # if order.isbuy():
+        #     return 'buy'
+        # elif order.issell():
+        #     return 'sell'
+        # else:
+        #     raise 'Unknown type'
+
+    def _status_in_str(self, order: Order) -> str:
+        '''
+        Returns
+        ---------------
+        与えた order の status を str で返す。
+        '''
+        return OrderBase.Status[order.status]
 
     def _setup_logger(self, loglevel):
         formatter = Formatter('[%(levelname)s] %(message)s')
