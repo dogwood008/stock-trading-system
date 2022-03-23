@@ -4,7 +4,7 @@ verify_ssl = true
 name = "pypi"
 
 [packages]
-backtrader = {editable = true, ref = "master", git = "https://github.com/mementum/backtrader.git"}
+backtrader = "*"
 matplotlib = "*"
 backtrader-plotting = "*"
 kabusapi = {editable = true, ref = "feature/add_close_websocket_feature", git = "https://github.com/dogwood008/python-kabusapi.git"}
@@ -16,6 +16,7 @@ jupyterthemes = "*"
 dill = "*"
 jpbizday = "*"
 beautifulsoup4 = "*"
+pytz = "*"
 
 [dev-packages]
 jupyter = "*"
