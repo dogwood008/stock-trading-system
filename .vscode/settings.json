@@ -1,0 +1,5 @@
+{
+    "python.autoComplete.extraPaths": [
+        "${env:PYTHON_PATH}${pathSeparator}lib${pathSeparator}python3.10${pathSeparator}site-packages${pathSeparator}",
+    ],
+}
