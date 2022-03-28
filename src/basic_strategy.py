@@ -9,6 +9,10 @@ from logging import getLogger, StreamHandler, FileHandler, \
 
 
 class BasicStrategy(bt.Strategy):
+    NOT_GIVEN:int = -1
+    MARKET_ORDER_PRICE = None
+    CLOSE_POSITION_ORDER_PRICE = None
+
     params = (
         ('tick_counter', 0),
         ('size', 100),
@@ -54,24 +58,19 @@ class BasicStrategy(bt.Strategy):
         - Rejected: Rejected by the broker
         '''
         # https://www.backtrader.com/docu/order/#:~:text=of%20an%20order-,Order%20Status%20values,-The%20following%20are
-        if order.status == Order.Accepted:
-            # Brokerが注文受領
-            self._debug(' Accepted: [%s] %.2f * %d' %
-                (self._buy_sell_in_str(order),
-                 order.price or 0, order.size or 0))
-        elif order.status == Order.Completed:
+        if order.status == Order.Completed:
             # 注文が通った
             executed = order.executed
-            self._info('Completed: [%s]: %.2f * %d' %
-                (self._buy_sell_in_str(order),
+            self._info('%9s: [%s]: %.2f * %d' %
+                (self._status_in_str(order),
+                 self._buy_sell_in_str(order),
                  executed.price, executed.size))
-        elif order.status in \
-            (Order.Canceled, Order.Expired, Order.Margin, Order.Rejected):
-            self._debug('%s: [%s]: %.2f * %d' %
-                (self._buy_sell_in_str(order),
-                 self._status_in_str(order),
-                 order.price, order.size))
-            # 注文が通らなかった
+        else:
+            # 注文が通らなかった 他
+            self._debug('%9s: [%s]: %.2f * %d' %
+                (self._status_in_str(order),
+                 self._buy_sell_in_str(order),
+                 order.price or 0, order.size or 0))
 
     def notify_cashvalue(self, cash: float, value: float):
         '''
@@ -82,7 +81,7 @@ class BasicStrategy(bt.Strategy):
         value: float
             時価総額
         '''
-        self._debug(f'cash={cash:9,} / value={value:9,}')
+        self._debug(f'notify_cashvalue(cash={cash:9,} / value={value:9,})')
         [self._cash, self._value] = cash, value
         return
 
@@ -93,21 +92,22 @@ class BasicStrategy(bt.Strategy):
         self._debug('[Close] = %.2f' %
             self._dataclose[0])
 
-        # もし5本連続で上がっているなら
-        if self.p.tick_counter >= 5 and \
-           self._is_increasing_over_5_ticks():
+        n_threshold: int = 10
+        # もしn本連続で上がっているなら
+        if self.p.tick_counter >= n_threshold and \
+           self._is_increasing_over_n_ticks(n=n_threshold):
             if self._is_holding_positions():
                 self._close_operation()
             else:
-                self._buy_operation()
+                self._buy_operation(price=self._dataclose[0])
 
-        # もし5本連続で下がっているなら
-        if self.p.tick_counter >= 5 and \
-           self._is_falling_over_5_ticks():
+        # もしn本連続で下がっているなら
+        if self.p.tick_counter >= n_threshold and \
+           self._is_falling_over_n_ticks(n=n_threshold):
             if self._is_holding_positions():
                 self._close_operation()
             else:
-                self._sell_operation()
+                self._sell_operation(price=self._dataclose[0])
 
     def stop(self):
         '''終了時にはファイルをクローズする。Backtraderから呼ばれる。'''
@@ -121,11 +121,19 @@ class BasicStrategy(bt.Strategy):
         is_buy_position: bool = size > 0
         reverse_op: Callable = \
             self._sell_operation if is_buy_position else self._buy_operation
-        reverse_op(size=size, price=None)
+        reverse_op(size=size, price=self.CLOSE_POSITION_ORDER_PRICE)
 
-    def _buy_operation(self, size=None, price=None):
-        ''' 1ティック前の値で買い注文（当日限り有効） '''
-        price = price or self._dataclose[-1]
+    def _buy_operation(self, size: int=MARKET_ORDER_PRICE, price: float=None):
+        '''
+        1ティック前の値で買い注文（当日限り有効）
+
+        Parameters
+        ---------------
+        size: int
+            数量
+        price: float
+            価格　Noneで成行
+        '''
         size = size or self.p.size
         # self._info('Order: [sell] %.2f * %d' % (price, size))
         self.buy(size=size, price=price, valid=Order.DAY)
@@ -139,27 +147,37 @@ class BasicStrategy(bt.Strategy):
         return bool(self.position.size)
 
 
-    def _is_increasing_over_5_ticks(self) -> bool:
+    def _is_increasing_over_n_ticks(self, n: int) -> bool:
         '''
         Returns
         ---------------
-            もし5本連続で上がっているならTrue
+            もしn本連続で上がっているならTrue
         '''
-        return self._dataclose[0] >= self._dataclose[-1] >= \
-           self._dataclose[-2] >= self._dataclose[-3] >= self._dataclose[-4]
+        return all(map(
+            lambda x: self._dataclose[-x] >= self._dataclose[-(x+1)],
+            range(n)))
 
-    def _is_falling_over_5_ticks(self) -> bool:
+    def _is_falling_over_n_ticks(self, n: int) -> bool:
         '''
         Returns
         --------------- 
-            もし5本連続で下がっているならTrue
+            もしn本連続で下がっているならTrue
         '''
-        return self._dataclose[0] <= self._dataclose[-1] <= \
-           self._dataclose[-2] <= self._dataclose[-3] <= self._dataclose[-4]
+        return all(map(
+            lambda x: self._dataclose[-x] <= self._dataclose[-(x+1)],
+            range(n)))
 
-    def _sell_operation(self, size=None):
-        ''' 1ティック前の値で売り注文（当日限り有効） '''
-        price = self._dataclose[-1]
+    def _sell_operation(self, size: int=MARKET_ORDER_PRICE, price: float=None):
+        '''
+        1ティック前の値で売り注文（当日限り有効）
+
+        Parameters
+        ---------------
+        size: int
+            数量
+        price: float
+            価格　Noneで成行
+        '''
         size = size or self.p.size
         # self._info('Order: [sell] %.2f * %d' % (price, size))
         self.sell(size=size, price=price, valid=Order.DAY)
@@ -171,13 +189,6 @@ class BasicStrategy(bt.Strategy):
         与えた order が 'buy' or 'sell' を返す。
         '''
         return OrderBase.OrdTypes[order.ordtype]
-
-        # if order.isbuy():
-        #     return 'buy'
-        # elif order.issell():
-        #     return 'sell'
-        # else:
-        #     raise 'Unknown type'
 
     def _status_in_str(self, order: Order) -> str:
         '''
