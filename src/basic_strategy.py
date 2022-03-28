@@ -36,6 +36,8 @@ class BasicStrategy(bt.Strategy):
         self._setup_logger(loglevel)
         self.sma = bt.indicators.SimpleMovingAverage(
             self.datas[0], period=self.params.smaperiod)
+        self._cash = 0
+        self._value = 0
 
 
     def notify_order(self, order: Order) -> None:
@@ -69,6 +71,18 @@ class BasicStrategy(bt.Strategy):
                  executed.price, executed.size))
             # 注文が通らなかった
             import pdb; pdb.set_trace()  # FIXME: WIP
+    def notify_cashvalue(self, cash: float, value: float):
+        '''
+        Parameters
+        --------------
+        cash: float
+            現金
+        value: float
+            時価総額
+        '''
+        self._debug(f'notify_cashvalue(cash={cash:9,} / value={value:9,})')
+        [self._cash, self._value] = cash, value
+        return
 
     def next(self):
         self.p.tick_counter += 1
