@@ -133,13 +133,6 @@ class BasicStrategy(bt.Strategy):
         '''
         return OrderBase.OrdTypes[order.ordtype]
 
-        # if order.isbuy():
-        #     return 'buy'
-        # elif order.issell():
-        #     return 'sell'
-        # else:
-        #     raise 'Unknown type'
-
     def _status_in_str(self, order: Order) -> str:
         '''
         Returns
