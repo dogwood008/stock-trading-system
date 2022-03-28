@@ -9,6 +9,8 @@ from logging import getLogger, StreamHandler, FileHandler, \
 
 
 class BasicStrategy(bt.Strategy):
+    # 成行売買（価格を指定しない）
+    MARKET_ORDER_PRICE = None
     # 手仕舞い時に指定
     CLOSE_POSITION_ORDER_PRICE = None
 
@@ -85,19 +87,28 @@ class BasicStrategy(bt.Strategy):
         return
 
     def next(self):
+        ''' ティック毎に呼ばれる '''
         self.p.tick_counter += 1
         # 今カーソルがある日時のtickにおける売買成立値
-        self._debug('[%6d] [Close] = %.2f' %
-            (self.p.tick_counter, self._dataclose[0]))
+        self._debug('[Close] = %.2f' %
+            self._dataclose[0])
 
-        # もし5本連続で下がっているなら
-        if self.p.tick_counter >= 5 and \
-           self._is_falling_over_5_ticks():
-            # 1ティック前の値で売り注文（当日限り有効）
-            price = self._dataclose[-1]
-            size = self.p.size
-            self._info('Order: [sell] %.2f * %d' % (price, size))
-            self.sell(size=size, price=price, valid=Order.DAY)
+        n_threshold: int = 10
+        # もしn本連続で上がっているなら
+        if self.p.tick_counter >= n_threshold and \
+           self._is_increasing_over_n_ticks(n=n_threshold):
+            if self._is_holding_positions():
+                self._close_operation()
+            else:
+                self._buy_operation(price=self._dataclose[0])
+
+        # もしn本連続で下がっているなら
+        if self.p.tick_counter >= n_threshold and \
+           self._is_falling_over_n_ticks(n=n_threshold):
+            if self._is_holding_positions():
+                self._close_operation()
+            else:
+                self._sell_operation(price=self._dataclose[0])
 
     def stop(self):
         '''終了時にはファイルをクローズする。Backtraderから呼ばれる。'''
@@ -112,6 +123,30 @@ class BasicStrategy(bt.Strategy):
         reverse_op: Callable = \
             self._sell_operation if is_buy_position else self._buy_operation
         reverse_op(size=size, price=self.CLOSE_POSITION_ORDER_PRICE)
+
+    def _buy_operation(self, size: int=MARKET_ORDER_PRICE, price: float=None):
+        '''
+        1ティック前の値で買い注文（当日限り有効）
+
+        Parameters
+        ---------------
+        size: int
+            数量
+        price: float
+            価格　Noneで成行
+        '''
+        size = size or self.p.size
+        # self._info('Order: [sell] %.2f * %d' % (price, size))
+        self.buy(size=size, price=price, valid=Order.DAY)
+
+    def _is_holding_positions(self) -> bool:
+        '''
+        Returns
+        ---------------
+            もし建玉があれば、True
+        '''
+        return bool(self.position.size)
+
 
     def _is_increasing_over_n_ticks(self, n: int) -> bool:
         '''
@@ -133,6 +168,21 @@ class BasicStrategy(bt.Strategy):
         return all(map(
             lambda x: self._dataclose[-x] < self._dataclose[-(x+1)],
             range(n)))
+
+    def _sell_operation(self, size: int=MARKET_ORDER_PRICE, price: float=None):
+        '''
+        1ティック前の値で売り注文（当日限り有効）
+
+        Parameters
+        ---------------
+        size: int
+            数量
+        price: float
+            価格　Noneで成行
+        '''
+        size = size or self.p.size
+        # self._info('Order: [sell] %.2f * %d' % (price, size))
+        self.sell(size=size, price=price, valid=Order.DAY)
 
     def _buy_sell_in_str(self, order: Order) -> str:
         '''
