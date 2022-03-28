@@ -1,3 +1,4 @@
+from typing import Callable
 import backtrader as bt
 from backtrader import Order, OrderBase
 
@@ -8,6 +9,9 @@ from logging import getLogger, StreamHandler, FileHandler, \
 
 
 class BasicStrategy(bt.Strategy):
+    # 手仕舞い時に指定
+    CLOSE_POSITION_ORDER_PRICE = None
+
     params = (
         ('tick_counter', 0),
         ('size', 100),
@@ -99,6 +103,15 @@ class BasicStrategy(bt.Strategy):
         '''終了時にはファイルをクローズする。Backtraderから呼ばれる。'''
         self.fhandler.close()
 
+    def _close_operation(self):
+        position: bt.position.Position = self.position
+        size: int = position.size
+        # https://github.com/mementum/backtrader/blob/e22205427bc0ac55723677c88573737a172590ef/backtrader/position.py#L130-L132
+        if not size: return
+        is_buy_position: bool = size > 0
+        reverse_op: Callable = \
+            self._sell_operation if is_buy_position else self._buy_operation
+        reverse_op(size=size, price=self.CLOSE_POSITION_ORDER_PRICE)
 
     def _is_increasing_over_n_ticks(self, n: int) -> bool:
         '''
