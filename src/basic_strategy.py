@@ -103,14 +103,27 @@ class BasicStrategy(bt.Strategy):
         '''終了時にはファイルをクローズする。Backtraderから呼ばれる。'''
         self.fhandler.close()
 
-    def _is_falling_over_5_ticks(self) -> bool:
+
+    def _is_increasing_over_n_ticks(self, n: int) -> bool:
+        '''
+        Returns
+        ---------------
+            もしn本連続で上がっているならTrue
+        '''
+        return all(map(
+            lambda x: self._dataclose[-x] >= self._dataclose[-(x+1)],
+            range(n)))
+
+    def _is_falling_over_n_ticks(self, n: int) -> bool:
         '''
         Returns
         --------------- 
-            もし5本連続で下がっているならTrue
+            もしn本連続で下がっているならTrue
         '''
-        return self._dataclose[0] < self._dataclose[-1] < \
-           self._dataclose[-2] < self._dataclose[-3] < self._dataclose[-4]
+        # <= だと、>=の時に同時に買い／売り注文を出してしまう
+        return all(map(
+            lambda x: self._dataclose[-x] < self._dataclose[-(x+1)],
+            range(n)))
 
     def _buy_sell_in_str(self, order: Order) -> str:
         '''
