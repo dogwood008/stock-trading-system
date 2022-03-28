@@ -22,7 +22,7 @@ class BasicStrategy(bt.Strategy):
         # https://github.com/mementum/backtrader/blob/e2674b1690f6366e08646d8cfd44af7bb71b3970/backtrader/linebuffer.py#L386-L388
         dt = dt or self.datas[0].datetime.datetime(
             ago=0, tz=pytz.timezone('Asia/Tokyo'))
-        self._logger.log(loglevel, '%s, %s' % (dt.isoformat(), txt))
+        self._logger.log(loglevel, '%s [%6d], %s' % (dt.isoformat(), self.p.tick_counter, txt))
 
     def _debug(self, txt, dt=None):
         self._log(txt, DEBUG, dt)
@@ -136,7 +136,7 @@ class BasicStrategy(bt.Strategy):
         return OrderBase.Status[order.status]
 
     def _setup_logger(self, loglevel):
-        formatter = Formatter('[%(levelname)s] %(message)s')
+        formatter = Formatter('[%(levelname)5s] %(message)s')
         self._logger = getLogger(__name__)
         self.handler = StreamHandler()
         self.handler.setLevel(loglevel)
