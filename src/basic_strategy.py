@@ -53,24 +53,20 @@ class BasicStrategy(bt.Strategy):
         - Rejected: Rejected by the broker
         '''
         # https://www.backtrader.com/docu/order/#:~:text=of%20an%20order-,Order%20Status%20values,-The%20following%20are
-        if order.status == Order.Accepted:
-            # Brokerが注文受領
-            self._debug('Accepted: [%s] %.2f * %d' %
-                (self._buy_sell_in_str(order),
-                 order.price or 0, order.size or 0))
-        elif order.status == Order.Completed:
+        if order.status == Order.Completed:
             # 注文が通った
             executed = order.executed
-            self._info('Completed: [%s]: %.2f * %d' %
-                (self._buy_sell_in_str(order),
+            self._info('%9s: [%s]: %.2f * %d' %
+                (self._status_in_str(order),
+                 self._buy_sell_in_str(order),
                  executed.price, executed.size))
-        elif order.status in \
-            (Order.Canceled, Order.Expired, Order.Margin, Order.Rejected):
-            self._debug('Completed: [%s]: %.2f * %d' %
-                (self._buy_sell_in_str(order),
-                 executed.price, executed.size))
-            # 注文が通らなかった
-            import pdb; pdb.set_trace()  # FIXME: WIP
+        else:
+            # 注文が通らなかった 他
+            self._debug('%9s: [%s]: %.2f * %d' %
+                (self._status_in_str(order),
+                 self._buy_sell_in_str(order),
+                 order.price or 0, order.size or 0))
+
     def notify_cashvalue(self, cash: float, value: float):
         '''
         Parameters
