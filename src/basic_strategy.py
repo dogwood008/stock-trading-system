@@ -1,3 +1,4 @@
+from typing import Callable
 import backtrader as bt
 from backtrader import Order, OrderBase
 
@@ -8,6 +9,11 @@ from logging import getLogger, StreamHandler, FileHandler, \
 
 
 class BasicStrategy(bt.Strategy):
+    # 成行売買（価格を指定しない）
+    MARKET_ORDER_PRICE = None
+    # 手仕舞い時に指定
+    CLOSE_POSITION_ORDER_PRICE = None
+
     params = (
         ('tick_counter', 0),
         ('size', 100),
@@ -22,7 +28,7 @@ class BasicStrategy(bt.Strategy):
         # https://github.com/mementum/backtrader/blob/e2674b1690f6366e08646d8cfd44af7bb71b3970/backtrader/linebuffer.py#L386-L388
         dt = dt or self.datas[0].datetime.datetime(
             ago=0, tz=pytz.timezone('Asia/Tokyo'))
-        self._logger.log(loglevel, '%s, %s' % (dt.isoformat(), txt))
+        self._logger.log(loglevel, '%s [%6d], %s' % (dt.isoformat(), self.p.tick_counter, txt))
 
     def _debug(self, txt, dt=None):
         self._log(txt, DEBUG, dt)
@@ -36,6 +42,8 @@ class BasicStrategy(bt.Strategy):
         self._setup_logger(loglevel)
         self.sma = bt.indicators.SimpleMovingAverage(
             self.datas[0], period=self.params.smaperiod)
+        self._cash = 0
+        self._value = 0
 
 
     def notify_order(self, order: Order) -> None:
@@ -51,52 +59,130 @@ class BasicStrategy(bt.Strategy):
         - Rejected: Rejected by the broker
         '''
         # https://www.backtrader.com/docu/order/#:~:text=of%20an%20order-,Order%20Status%20values,-The%20following%20are
-        if order.status == Order.Accepted:
-            # Brokerが注文受領
-            self._debug('Accepted: [%s] %.2f * %d' %
-                (self._buy_sell_in_str(order),
-                 order.price or 0, order.size or 0))
-        elif order.status == Order.Completed:
+        if order.status == Order.Completed:
             # 注文が通った
             executed = order.executed
-            self._info('Completed: [%s]: %.2f * %d' %
-                (self._buy_sell_in_str(order),
+            self._info('%9s: [%s]: %.2f * %d' %
+                (self._status_in_str(order),
+                 self._buy_sell_in_str(order),
                  executed.price, executed.size))
-        elif order.status in \
-            (Order.Canceled, Order.Expired, Order.Margin, Order.Rejected):
-            self._debug('Completed: [%s]: %.2f * %d' %
-                (self._buy_sell_in_str(order),
-                 executed.price, executed.size))
-            # 注文が通らなかった
-            import pdb; pdb.set_trace()  # FIXME: WIP
+        else:
+            # 注文が通らなかった 他
+            self._debug('%9s: [%s]: %.2f * %d' %
+                (self._status_in_str(order),
+                 self._buy_sell_in_str(order),
+                 order.price or 0, order.size or 0))
+
+    def notify_cashvalue(self, cash: float, value: float):
+        '''
+        Parameters
+        --------------
+        cash: float
+            現金
+        value: float
+            時価総額
+        '''
+        self._debug(f'notify_cashvalue(cash={cash:9,} / value={value:9,})')
+        [self._cash, self._value] = cash, value
+        return
 
     def next(self):
+        ''' ティック毎に呼ばれる '''
         self.p.tick_counter += 1
         # 今カーソルがある日時のtickにおける売買成立値
-        self._debug('[%6d] [Close] = %.2f' %
-            (self.p.tick_counter, self._dataclose[0]))
+        self._debug('[Close] = %.2f' %
+            self._dataclose[0])
 
-        # もし5本連続で下がっているなら
-        if self.p.tick_counter >= 5 and \
-           self._is_falling_over_5_ticks():
-            # 1ティック前の値で売り注文（当日限り有効）
-            price = self._dataclose[-1]
-            size = self.p.size
-            self._info('Order: [sell] %.2f * %d' % (price, size))
-            self.sell(size=size, price=price, valid=Order.DAY)
+        n_threshold: int = 10
+        # もしn本連続で上がっているなら
+        if self.p.tick_counter >= n_threshold and \
+           self._is_increasing_over_n_ticks(n=n_threshold):
+            if self._is_holding_positions():
+                self._close_operation()
+            else:
+                self._buy_operation(price=self._dataclose[0])
+
+        # もしn本連続で下がっているなら
+        if self.p.tick_counter >= n_threshold and \
+           self._is_falling_over_n_ticks(n=n_threshold):
+            if self._is_holding_positions():
+                self._close_operation()
+            else:
+                self._sell_operation(price=self._dataclose[0])
 
     def stop(self):
         '''終了時にはファイルをクローズする。Backtraderから呼ばれる。'''
         self.fhandler.close()
 
-    def _is_falling_over_5_ticks(self) -> bool:
+    def _close_operation(self):
+        position: bt.position.Position = self.position
+        size: int = position.size
+        # https://github.com/mementum/backtrader/blob/e22205427bc0ac55723677c88573737a172590ef/backtrader/position.py#L130-L132
+        if not size: return
+        is_buy_position: bool = size > 0
+        reverse_op: Callable = \
+            self._sell_operation if is_buy_position else self._buy_operation
+        reverse_op(size=size, price=self.CLOSE_POSITION_ORDER_PRICE)
+
+    def _buy_operation(self, size: int=MARKET_ORDER_PRICE, price: float=None):
+        '''
+        1ティック前の値で買い注文（当日限り有効）
+
+        Parameters
+        ---------------
+        size: int
+            数量
+        price: float
+            価格　Noneで成行
+        '''
+        size = size or self.p.size
+        # self._info('Order: [sell] %.2f * %d' % (price, size))
+        self.buy(size=size, price=price, valid=Order.DAY)
+
+    def _is_holding_positions(self) -> bool:
+        '''
+        Returns
+        ---------------
+            もし建玉があれば、True
+        '''
+        return bool(self.position.size)
+
+
+    def _is_increasing_over_n_ticks(self, n: int) -> bool:
+        '''
+        Returns
+        ---------------
+            もしn本連続で上がっているならTrue
+        '''
+        return all(map(
+            lambda x: self._dataclose[-x] >= self._dataclose[-(x+1)],
+            range(n)))
+
+    def _is_falling_over_n_ticks(self, n: int) -> bool:
         '''
         Returns
         --------------- 
-            もし5本連続で下がっているならTrue
+            もしn本連続で下がっているならTrue
         '''
-        return self._dataclose[0] < self._dataclose[-1] < \
-           self._dataclose[-2] < self._dataclose[-3] < self._dataclose[-4]
+        # <= だと、>=の時に同時に買い／売り注文を出してしまう
+        return all(map(
+            lambda x: self._dataclose[-x] < self._dataclose[-(x+1)],
+            range(n)))
+
+    def _sell_operation(self, size: int=MARKET_ORDER_PRICE, price: float=None):
+        '''
+        1ティック前の値で売り注文（当日限り有効）
+
+        Parameters
+        ---------------
+        size: int
+            数量
+        price: float
+            価格　Noneで成行
+        '''
+        size = size or self.p.size
+        # self._info('Order: [sell] %.2f * %d' % (price, size))
+        self.sell(size=size, price=price, valid=Order.DAY)
 
     def _buy_sell_in_str(self, order: Order) -> str:
         '''
@@ -105,13 +191,6 @@ class BasicStrategy(bt.Strategy):
         与えた order が 'buy' or 'sell' を返す。
         '''
         return OrderBase.OrdTypes[order.ordtype]
-
-        # if order.isbuy():
-        #     return 'buy'
-        # elif order.issell():
-        #     return 'sell'
-        # else:
-        #     raise 'Unknown type'
 
     def _status_in_str(self, order: Order) -> str:
         '''
@@ -122,7 +201,7 @@ class BasicStrategy(bt.Strategy):
         return OrderBase.Status[order.status]
 
     def _setup_logger(self, loglevel):
-        formatter = Formatter('[%(levelname)s] %(message)s')
+        formatter = Formatter('[%(levelname)5s] %(message)s')
         self._logger = getLogger(__name__)
         self.handler = StreamHandler()
         self.handler.setLevel(loglevel)

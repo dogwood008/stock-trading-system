@@ -55,7 +55,10 @@ if __name__ == '__main__':
     cerebro.adddata(data)
 
     # Set our desired cash start
-    cerebro.broker.setcash(100000.0)
+    cerebro.broker.setcash(1000.0 * 10000)
+
+    # https://www.backtrader.com/blog/posts/2016-12-06-shorting-cash/shorting-cash/
+    # cerebro.broker.set_shortcash(False)
 
     # Print out the starting conditions
     print('Starting Portfolio Value: %.2f' % cerebro.broker.getvalue())
