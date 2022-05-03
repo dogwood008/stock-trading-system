@@ -25,11 +25,11 @@
 # SOFTWARE.
 
 from operator import index
-from typing import NewType, TypeAlias, Tuple
+from typing import NewType, TypeAlias, Dict
 from collections import deque
 
 import pandas as pd
-from datetime import datetime
+from datetime import datetime, date
 import pytz
 
 from backtrader.dataseries import TimeFrame
@@ -38,6 +38,7 @@ from backtrader.utils import date2num
 
 State: TypeAlias = int
 HistData: NewType = NewType('HistData', list[list[datetime, float]])
+AlreadyCaluculatedPositions: NewType = NewType('AlreadyCaluculatedPositions', set)
 
 class TimeAndSalesDeliverData(DataBase):
     params = (
@@ -54,6 +55,23 @@ class TimeAndSalesDeliverData(DataBase):
         self._data = deque()
         if data:
             self._hist_data = data
+        self._interest_last_caluculated_date: date = date(1900, 1, 1)  # 金利を最後に計算した日付
+        self._already_caluculated_positions: AlreadyCaluculatedPositions = set()  # 既に金利計算済みのポジション
+
+    @property
+    def interest_last_caluculated_date(self) -> date:
+        ''' 金利を最後に計算した日付 '''
+        return self._interest_last_caluculated_date
+
+    @interest_last_caluculated_date.setter
+    def interest_last_caluculated_date(self, date: date):
+        ''' 金利を最後に計算した日付 '''
+        self._interest_last_caluculated_date = date
+
+    @property
+    def already_caluculated_positions(self) -> AlreadyCaluculatedPositions:
+        ''' 既に金利計算済みのポジション '''
+        return self._already_caluculated_positions
 
     def start(self):
         DataBase.start(self)

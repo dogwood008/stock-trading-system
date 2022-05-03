@@ -12,6 +12,7 @@ from backtrader import Order
 
 from backtrader_plotting import Bokeh
 from backtrader_plotting.schemes import Tradimo
+from kabu_s_logger import KabuSLogger
 
 sys.path.append(os.path.join(os.path.dirname(__file__), '.'))
 #from time_and_sales_deliver_store import TimeAndSalesDeliverStore
@@ -58,7 +59,10 @@ if __name__ == '__main__':
     # Set our desired cash start
     cerebro.broker.setcash(1000.0 * 10000)
     dataname = 'TimeAndSalesDeliverData'
-    cerebro.broker.addcommissioninfo(DMMKabuComission(), name=dataname)
+    logger = KabuSLogger()
+    handler = StreamHandler()
+    handler.setLevel(loglevel)
+    cerebro.broker.addcommissioninfo(DMMKabuComission(logger), name=dataname)
 
     # https://www.backtrader.com/blog/posts/2016-12-06-shorting-cash/shorting-cash/
     # cerebro.broker.set_shortcash(False)
