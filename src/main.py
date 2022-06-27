@@ -60,8 +60,9 @@ if __name__ == '__main__':
     cerebro.broker.setcash(1000.0 * 10000)
     dataname = 'TimeAndSalesDeliverData'
     logger = KabuSLogger()
-    handler = StreamHandler()
+    handler = StreamHandler(sys.stdout)
     handler.setLevel(loglevel)
+    logger.addHandler(handler)
     cerebro.broker.addcommissioninfo(DMMKabuComission(logger), name=dataname)
 
     # https://www.backtrader.com/blog/posts/2016-12-06-shorting-cash/shorting-cash/
