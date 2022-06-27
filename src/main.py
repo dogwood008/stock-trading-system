@@ -19,6 +19,7 @@ sys.path.append(os.path.join(os.path.dirname(__file__), '.'))
 from time_and_sales_deliver_store import TimeAndSalesDeliverStore
 from basic_strategy import BasicStrategy
 from dmm_kabu_comission import DMMKabuComission
+from au_kabucom_oneshots_comission import AuKabucomOneshotsComission
 
 # ログ用
 from logging import getLogger, StreamHandler, Formatter, DEBUG, INFO, WARN
@@ -63,7 +64,8 @@ if __name__ == '__main__':
     handler = StreamHandler(sys.stdout)
     handler.setLevel(loglevel)
     logger.addHandler(handler)
-    cerebro.broker.addcommissioninfo(DMMKabuComission(logger), name=dataname)
+    # DMM株: cerebro.broker.addcommissioninfo(DMMKabuComission(logger), name=dataname)
+    cerebro.broker.addcommissioninfo(AuKabucomOneshotsComission(logger), name=dataname)
 
     # https://www.backtrader.com/blog/posts/2016-12-06-shorting-cash/shorting-cash/
     # cerebro.broker.set_shortcash(False)
