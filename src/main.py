@@ -12,11 +12,14 @@ from backtrader import Order
 
 from backtrader_plotting import Bokeh
 from backtrader_plotting.schemes import Tradimo
+from kabu_s_logger import KabuSLogger
 
 sys.path.append(os.path.join(os.path.dirname(__file__), '.'))
 #from time_and_sales_deliver_store import TimeAndSalesDeliverStore
 from time_and_sales_deliver_store import TimeAndSalesDeliverStore
 from basic_strategy import BasicStrategy
+from dmm_kabu_comission import DMMKabuComission
+from au_kabucom_oneshots_comission import AuKabucomOneshotsComission
 
 # ログ用
 from logging import getLogger, StreamHandler, Formatter, DEBUG, INFO, WARN
@@ -48,7 +51,7 @@ if __name__ == '__main__':
     options = { 'protocol': 'http', 'host': 'localhost', 'port': '4567' }  # FIXME: give some args
     store = TimeAndSalesDeliverStore(**options)
     start_dt = datetime.strptime('2021-11-01T09:00:00', "%Y-%m-%dT%H:%M:%S")
-    end_dt = datetime.strptime('2021-11-02T15:00:00', "%Y-%m-%dT%H:%M:%S")
+    end_dt = datetime.strptime('2021-11-30T15:00:00', "%Y-%m-%dT%H:%M:%S")
     data = store.getdata(stock_code=stock_code, start_dt=start_dt, end_dt=end_dt)
 
     # Add the Data Feed to Cerebro
@@ -56,6 +59,13 @@ if __name__ == '__main__':
 
     # Set our desired cash start
     cerebro.broker.setcash(1000.0 * 10000)
+    dataname = 'TimeAndSalesDeliverData'
+    logger = KabuSLogger()
+    handler = StreamHandler(sys.stdout)
+    handler.setLevel(loglevel)
+    logger.addHandler(handler)
+    # DMM株: cerebro.broker.addcommissioninfo(DMMKabuComission(logger), name=dataname)
+    cerebro.broker.addcommissioninfo(AuKabucomOneshotsComission(logger), name=dataname)
 
     # https://www.backtrader.com/blog/posts/2016-12-06-shorting-cash/shorting-cash/
     # cerebro.broker.set_shortcash(False)
