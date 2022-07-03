@@ -11,13 +11,15 @@
 			// Use -bullseye variants on local on arm64/Apple Silicon.
 			"VARIANT": "3.10-bullseye",
 			// Options
-			"NODE_VERSION": "lts/*"
+			"NODE_VERSION": "16/*",
+			"IN_VS_CODE": "true",
+			"WORKDIR": "${containerWorkspaceFolder}"
 		}
 	},
 
 	// Set *default* container specific settings.json values on container create.
 	"settings": { 
-		"python.defaultInterpreterPath": "/usr/local/bin/python",
+		"python.defaultInterpreterPath": "/workspaces/stock-trading-system/.venv/bin/python",
 		"python.linting.enabled": true,
 		"python.linting.pylintEnabled": true,
 		"python.formatting.autopep8Path": "/usr/local/py-utils/bin/autopep8",
@@ -41,8 +43,13 @@
 	// "forwardPorts": [],
 
 	// Use 'postCreateCommand' to run commands after the container is created.
-	"postCreateCommand": "echo \"alias sl='ls'; alias ..='cd ../'; alias ...='ce ../../'; alias ..2='cd ../../'; alias ..3='cd ../../../'; alias ..4='cd ../../../../'; alias ..5='cd ../../../../../'; alias ..6='cd ../../../../../../'; ; alias la='ls -A -F -G '; alias l='ls -CF -h -G '; alias ls='ls -l -F -G'; alias ll='ls -l'; ; alias gst='git status'; alias gco='git commit'; alias gcom='git commit -m'; alias gpul='git pull'; alias gpu='git push origin'; alias gpum='git push origin master'; alias gdi='git diff'; alias gdic='git diff --cached'; alias gad='git add'; alias gad.='git add .'; alias gch='git checkout'; alias gchr='git cherry-pick'; alias gbr='git branch'; alias gme='git merge'; alias gre='git rebase'; alias grei='git rebase -i'; alias gres='git reset'; alias gresh='git reset --hard'; alias grm='git rm --cached'; alias gmv='git mv --cached'; alias glo='git log'; alias gf='git flow'; alias gff='git flow feature'; alias gffs='git flow feature start'; alias gfff='git flow feature finish'; alias gffp='git flow feature publish'; alias gfh='git flow hotfix'; alias gfhs='git flow hotfix start VERSION'; alias gfhf='git flow hotfix finish VERSION'; alias gpuo-='git push origin `git rev-parse --abbrev-ref HEAD`'; ; alias dp='docker ps'; alias dc='docker-compose'; alias dcb='docker-compose build'; alias dcu='docker-compose up'; alias dce='docker-compose exec'; alias dcr='docker-compose run --rm --service-ports'; ; alias be='bundle exec'; \" >> /etc/bash.bashrc",
+	"postCreateCommand":
+		"touch /home/vscode/.bashrc; echo \"alias sl='ls'; alias ..='cd ../'; alias ...='cd ../../'; alias ..2='cd ../../'; alias ..3='cd ../../../'; alias ..4='cd ../../../../'; alias ..5='cd ../../../../../'; alias ..6='cd ../../../../../../'; alias la='ls -A -F -G '; alias l='ls -CF -h -G '; alias ls='ls -l -F -G'; alias ll='ls -l'; alias gst='git status'; alias gco='git commit'; alias gcom='git commit -m'; alias gpul='git pull'; alias gpu='git push origin'; alias gpum='git push origin master'; alias gdi='git diff'; alias gdic='git diff --cached'; alias gad='git add'; alias gad.='git add .'; alias gch='git checkout'; alias gchr='git cherry-pick'; alias gbr='git branch'; alias gme='git merge'; alias gre='git rebase'; alias gpuo-='git push origin `git rev-parse --abbrev-ref HEAD`'\" >> /home/vscode/.bashrc; sh -c 'echo eval \"$(direnv hook bash)\" >> ~/.bashrc'; sh -c 'echo export PYTHON_PATH=`pipenv --venv` >> ~/.bashrc'; direnv allow",
 
 	// Comment out connect as root instead. More info: https://aka.ms/vscode-remote/containers/non-root.
-	"remoteUser": "vscode"
+	"remoteUser": "vscode",
+
+	"remoteEnv": {
+		"PYTHON_PATH": "/workspaces/stock-trading-system/.venv"
+	},
 }
