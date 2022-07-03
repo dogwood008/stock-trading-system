@@ -11,7 +11,12 @@
       "program": "src/main.py",
       "console": "integratedTerminal",
       "python": "${env:PYTHON_PATH}${pathSeparator}bin${pathSeparator}python",
-      "justMyCode": true
+      "justMyCode": true,
+      "env": {
+        "T_AND_S_DELIVER_PROTOCOL": "https",
+        "T_AND_S_DELIVER_HOST": "（ここを Local Addresses のホスト名にする）", //[codespaces] ports -> Local Addresses
+        "T_AND_S_DELIVER_PORT": "443",
+      }
     }
   ]
 }

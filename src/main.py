@@ -48,7 +48,11 @@ if __name__ == '__main__':
     #     todate=datetime.datetime(2000, 12, 31),
     #     reverse=False)
     stock_code: str = '7974'
-    options = { 'protocol': 'http', 'host': 'localhost', 'port': '4567' }  # FIXME: give some args
+    options = {
+        'protocol': os.environ.get('T_AND_S_DELIVER_PROTOCOL', 'http'),
+        'host': os.environ.get('T_AND_S_DELIVER_HOST', 'localhost'),
+        'port': os.environ.get('T_AND_S_DELIVER_PORT', '4567'),
+    }  # FIXME: give some args
     store = TimeAndSalesDeliverStore(**options)
     start_dt = datetime.strptime('2021-11-01T09:00:00', "%Y-%m-%dT%H:%M:%S")
     end_dt = datetime.strptime('2021-11-30T15:00:00', "%Y-%m-%dT%H:%M:%S")
