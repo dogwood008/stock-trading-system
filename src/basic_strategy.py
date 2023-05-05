@@ -9,6 +9,7 @@ from logging import getLogger, StreamHandler, FileHandler, \
 
 
 class BasicStrategy(bt.Strategy):
+    NOT_GIVEN:int = -1
     # 成行売買（価格を指定しない）
     MARKET_ORDER_PRICE = None
     # 手仕舞い時に指定
@@ -143,7 +144,6 @@ class BasicStrategy(bt.Strategy):
         '''終了時にはファイルをクローズする。Backtraderから呼ばれる。'''
         self.fhandler.close()
 
-
     def _is_holding_positions_on_buy_side(self):
         '''建玉が買い建てならTrue'''
         return self.position.size > 0
@@ -151,7 +151,6 @@ class BasicStrategy(bt.Strategy):
     def _is_holding_positions_on_sell_side(self):
         '''建玉が売り建てならTrue'''
         return self.position.size < 0
-
 
     def _close_operation(self):
         position: bt.position.Position = self.position

@@ -11,45 +11,55 @@
 			// Use -bullseye variants on local on arm64/Apple Silicon.
 			"VARIANT": "3.10-bullseye",
 			// Options
-			"NODE_VERSION": "16/*",
+			"NODE_VERSION": "18/*",
 			"IN_VS_CODE": "true",
 			"WORKDIR": "${containerWorkspaceFolder}"
 		}
 	},
 
-	// Set *default* container specific settings.json values on container create.
-	"settings": { 
-		"python.defaultInterpreterPath": "/workspaces/stock-trading-system/.venv/bin/python",
-		"python.linting.enabled": true,
-		"python.linting.pylintEnabled": true,
-		"python.formatting.autopep8Path": "/usr/local/py-utils/bin/autopep8",
-		"python.formatting.blackPath": "/usr/local/py-utils/bin/black",
-		"python.formatting.yapfPath": "/usr/local/py-utils/bin/yapf",
-		"python.linting.banditPath": "/usr/local/py-utils/bin/bandit",
-		"python.linting.flake8Path": "/usr/local/py-utils/bin/flake8",
-		"python.linting.mypyPath": "/usr/local/py-utils/bin/mypy",
-		"python.linting.pycodestylePath": "/usr/local/py-utils/bin/pycodestyle",
-		"python.linting.pydocstylePath": "/usr/local/py-utils/bin/pydocstyle",
-		"python.linting.pylintPath": "/usr/local/py-utils/bin/pylint"
-	},
+	"customizations": {
 
 	// Add the IDs of extensions you want installed when the container is created.
 	"extensions": [
 		"ms-python.python",
-		"ms-python.vscode-pylance"
+		"ms-python.vscode-pylance",
+		"GitHub.copilot",
+		"ms-azuretools.vscode-docker"
 	],
+	// Set *default* container specific settings.json values on container create.
+		"settings": { 
+			"python.defaultInterpreterPath": "/workspaces/stock-trading-system/.venv/bin/python",
+			"python.linting.enabled": true,
+			"python.linting.pylintEnabled": true,
+			"python.formatting.autopep8Path": "/usr/local/py-utils/bin/autopep8",
+			"python.formatting.blackPath": "/usr/local/py-utils/bin/black",
+			"python.formatting.yapfPath": "/usr/local/py-utils/bin/yapf",
+			"python.linting.banditPath": "/usr/local/py-utils/bin/bandit",
+			"python.linting.flake8Path": "/usr/local/py-utils/bin/flake8",
+			"python.linting.mypyPath": "/usr/local/py-utils/bin/mypy",
+			"python.linting.pycodestylePath": "/usr/local/py-utils/bin/pycodestyle",
+			"python.linting.pydocstylePath": "/usr/local/py-utils/bin/pydocstyle",
+			"python.linting.pylintPath": "/usr/local/py-utils/bin/pylint"
+		},
+	},
 
 	// Use 'forwardPorts' to make a list of ports inside the container available locally.
 	// "forwardPorts": [],
 
 	// Use 'postCreateCommand' to run commands after the container is created.
 	"postCreateCommand":
-		"touch /home/vscode/.bashrc; echo \"alias sl='ls'; alias ..='cd ../'; alias ...='cd ../../'; alias ..2='cd ../../'; alias ..3='cd ../../../'; alias ..4='cd ../../../../'; alias ..5='cd ../../../../../'; alias ..6='cd ../../../../../../'; alias la='ls -A -F -G '; alias l='ls -CF -h -G '; alias ls='ls -l -F -G'; alias ll='ls -l'; alias gst='git status'; alias gco='git commit'; alias gcom='git commit -m'; alias gpul='git pull'; alias gpu='git push origin'; alias gpum='git push origin master'; alias gdi='git diff'; alias gdic='git diff --cached'; alias gad='git add'; alias gad.='git add .'; alias gch='git checkout'; alias gchr='git cherry-pick'; alias gbr='git branch'; alias gme='git merge'; alias gre='git rebase'; alias gpuo-='git push origin `git rev-parse --abbrev-ref HEAD`'\" >> /home/vscode/.bashrc; sh -c 'echo eval \"$(direnv hook bash)\" >> ~/.bashrc'; sh -c 'echo export PYTHON_PATH=`pipenv --venv` >> ~/.bashrc'; direnv allow",
+		"sudo /bin/sh ./.devcontainer/install_docker.sh; /bin/sh ./.devcontainer/commands.sh",
 
 	// Comment out connect as root instead. More info: https://aka.ms/vscode-remote/containers/non-root.
 	"remoteUser": "vscode",
 
 	"remoteEnv": {
 		"PYTHON_PATH": "/workspaces/stock-trading-system/.venv"
+	},
+
+	"features": {
+		"docker-in-docker": {
+			"version": "latest"
+		}
 	},
 }
