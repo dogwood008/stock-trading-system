@@ -5,8 +5,38 @@ ARG VARIANT="3.10-bullseye"
 FROM mcr.microsoft.com/vscode/devcontainers/python:0-${VARIANT}
 
 # [Choice] Node.js version: none, lts/*, 16, 14, 12, 10
-ARG NODE_VERSION="none"
+ARG NODE_VERSION="16"
 RUN if [ "${NODE_VERSION}" != "none" ]; then su vscode -c "umask 0002 && . /usr/local/share/nvm/nvm.sh && nvm install ${NODE_VERSION} 2>&1"; fi
+
+# From Dockerfile
+LABEL maintainer="dogwood008"
+ARG btrepodir=/opt/backtrader
+
+ENV WORKDIR /app
+ENV TZ=Asia/Tokyo
+ARG USERNAME=${USER_NAME:-vscode}
+
+WORKDIR ${WORKDIR}
+COPY Pipfile ${WORKDIR}/Pipfile
+COPY Pipfile.lock ${WORKDIR}/Pipfile.lock
+
+ARG PIPENV_VENV_IN_PROJECT
+ENV PIPENV_VENV_IN_PROJECT ${PIPENV_VENV_IN_PROJECT}
+RUN --mount=type=cache,target=/root/.cache \
+    pip install --upgrade pip && \
+    pip install pipenv && \
+    pipenv install --deploy --ignore-pipfile --python=$(which python) --site-packages
+
+
+ARG IN_VS_CODE
+ENV EDITOR=vim
+ENV IN_VS_CODE=${IN_VS_CODE}
+RUN echo ${IN_VS_CODE}
+RUN if [ ${IN_VS_CODE} = true ]; then \
+      sh -c 'sudo apt update && sudo apt install -y vim direnv' && \
+      sh -c 'echo eval "$(direnv hook bash)" >> ~/.bashrc' && \
+      sh -c 'echo export PYTHON_PATH=`pipenv --venv` >> ~/.bashrc'; \
+    fi
 
 # [Optional] If your pip requirements rarely change, uncomment this section to add them to the image.
 # COPY requirements.txt /tmp/pip-tmp/

@@ -10,7 +10,9 @@ from logging import getLogger, StreamHandler, FileHandler, \
 
 class BasicStrategy(bt.Strategy):
     NOT_GIVEN:int = -1
+    # 成行売買（価格を指定しない）
     MARKET_ORDER_PRICE = None
+    # 手仕舞い時に指定
     CLOSE_POSITION_ORDER_PRICE = None
 
     params = (
@@ -19,6 +21,7 @@ class BasicStrategy(bt.Strategy):
         ('smaperiod', 5),
         ('log_name', 'basic_strategy.log'),
         ('log_mode', 'w'),
+        ('max_size', 300),
     )
     def _log(self, txt, loglevel=INFO, dt=None):
         ''' Logging function for this strategy '''
@@ -96,22 +99,58 @@ class BasicStrategy(bt.Strategy):
         # もしn本連続で上がっているなら
         if self.p.tick_counter >= n_threshold and \
            self._is_increasing_over_n_ticks(n=n_threshold):
-            if self._is_holding_positions():
-                self._close_operation()
-            else:
+            if not self._is_holding_positions():
                 self._buy_operation(price=self._dataclose[0])
+                return
+            if self._is_holding_positions_on_sell_side():
+                self._close_operation()
+                return
+            if abs(self.position.size) < self.p.max_size:
+                self._buy_operation(price=self._dataclose[0])
+        # if self.p.tick_counter >= n_threshold and \
+        #    self._is_increasing_over_n_ticks(n=n_threshold):
+        #     if self._is_holding_positions():
+        #         if self._is_holding_positions_on_buy_side():
+        #             if abs(self.position.size) < self.p.max_size:
+        #                 self._buy_operation(price=self._dataclose[0])
+        #         else:
+        #             self._close_operation()
+        #     else:
+        #         self._buy_operation(price=self._dataclose[0])
 
         # もしn本連続で下がっているなら
         if self.p.tick_counter >= n_threshold and \
            self._is_falling_over_n_ticks(n=n_threshold):
-            if self._is_holding_positions():
-                self._close_operation()
-            else:
+            if not self._is_holding_positions():
                 self._sell_operation(price=self._dataclose[0])
+                return
+            if self._is_holding_positions_on_buy_side():
+                self._close_operation()
+                return
+            if abs(self.position.size) < self.p.max_size:
+                self._sell_operation(price=self._dataclose[0])
+        # if self.p.tick_counter >= n_threshold and \
+        #    self._is_falling_over_n_ticks(n=n_threshold):
+        #     if self._is_holding_positions():
+        #         if self._is_holding_positions_on_sell_side():
+        #             if abs(self.position.size) < self.p.max_size:
+        #                 self._sell_operation(price=self._dataclose[0])
+        #         else:
+        #             self._close_operation()
+        #     else:
+        #         self._sell_operation(price=self._dataclose[0])
 
     def stop(self):
         '''終了時にはファイルをクローズする。Backtraderから呼ばれる。'''
         self.fhandler.close()
+
+    def _is_holding_positions_on_buy_side(self):
+        '''建玉が買い建てならTrue'''
+        return self.position.size > 0
+
+    def _is_holding_positions_on_sell_side(self):
+        '''建玉が売り建てならTrue'''
+        return self.position.size < 0
 
     def _close_operation(self):
         position: bt.position.Position = self.position
@@ -163,8 +202,9 @@ class BasicStrategy(bt.Strategy):
         --------------- 
             もしn本連続で下がっているならTrue
         '''
+        # <= だと、>=の時に同時に買い／売り注文を出してしまう
         return all(map(
-            lambda x: self._dataclose[-x] <= self._dataclose[-(x+1)],
+            lambda x: self._dataclose[-x] < self._dataclose[-(x+1)],
             range(n)))
 
     def _sell_operation(self, size: int=MARKET_ORDER_PRICE, price: float=None):
