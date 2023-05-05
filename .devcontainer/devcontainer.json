@@ -56,4 +56,10 @@
 	"remoteEnv": {
 		"PYTHON_PATH": "/workspaces/stock-trading-system/.venv"
 	},
+
+	"features": {
+		"docker-in-docker": {
+			"version": "latest"
+		}
+	},
 }
